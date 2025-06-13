@@ -1,6 +1,7 @@
 import os
 import pathlib
 import sys
+import re
 from collections import defaultdict
 
 from mojentic.llm import LLMBroker, MessageBuilder
@@ -9,6 +10,19 @@ from mojentic.llm.gateways.models import LLMMessage
 
 openai = OpenAIGateway(api_key=os.getenv("OPENAI_API_KEY"))
 ollama = OllamaGateway()
+
+
+def strip_thinking(text):
+    """
+    Strip out thinking text enclosed in <think>...</think> tags from the response.
+
+    Args:
+        text (str): The text to process
+
+    Returns:
+        str: The text with thinking sections removed
+    """
+    return re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
 
 
 def process_folder(folder_path: str, use_ollama: bool = False):
@@ -67,9 +81,12 @@ def process_folder(folder_path: str, use_ollama: bool = False):
             # Send the message to the LLM
             response = llm.generate(messages=[message])
 
+            # Strip out thinking text
+            response = strip_thinking(response)
+
             # Create the output file path
             output_file_path = file_path.with_name(
-                f"{file_path.stem}-output-{llm_model_name.replace(":","-")}-{file_path.suffix}")
+                f"{file_path.stem}-output-{llm_model_name.replace(":","-")}{file_path.suffix}")
 
             # Write the response to the output file
             with open(output_file_path, 'w') as output_file:
@@ -99,6 +116,9 @@ def process_folder(folder_path: str, use_ollama: bool = False):
         mb.add_files(*outputs)
 
         assessment = llm.generate(messages=[mb.build()])
+
+        # Strip out thinking text
+        assessment = strip_thinking(assessment)
 
         assessment_file_path = source_file.with_name(
             f"{source_file.stem}-assessment{source_file.suffix}")
