@@ -1,24 +1,23 @@
-[project]
+[tool.poetry]
 name = "swe-prompt-impact"
 version = "0.1.0"
 description = "Assessing how prompts influence the style of code that an LLM writes"
-authors = [
-    {name = "Stacey Vetzal",email = "stacey@vetzal.com"}
-]
-license = {text = "MIT"}
+authors = ["Stacey Vetzal <stacey@vetzal.com>"]
+license = "MIT"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "mojentic (>=0.7.1,<0.8.0)"
-]
-packages = [
-    {include = "assessor", from = "src"}
-]
+packages = [{include = "assessor", from = "src"}]
 
-[tool.poetry]
+[tool.poetry.dependencies]
+python = ">=3.13"
+mojentic = ">=0.7.1,<0.8.0"
+
+[tool.poetry.scripts]
+assessor = "assessor.cli:main"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.0"
+pytest-mock = "^3.12.0"
+pytest-spec = "^3.2.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
