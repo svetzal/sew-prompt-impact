@@ -1,143 +1,186 @@
-Certainly! Below is a Python module designed to manage a list of tasks. This module adheres to the principles and conventions you've specified, including naming conventions, type hints, docstrings, and more.
+Certainly! Below is a Python module that manages a list of tasks following the provided conventions and principles. The module includes classes, functions, and type hints for data models using `pydantic.BaseModel`. Additionally, it includes unit tests to ensure correctness.
+
+### `task_manager.py`
 
 ```python
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel, validator
 
-# Data model for a task using Pydantic for validation
-class Task(BaseModel):
-    id: int
-    title: str
-    description: str = ""
-    due_date: Optional[datetime] = None
-    completed: bool = False
+# Constants
+DEFAULT_STATUS = 'pending'
+MAX_TASKS = 100
 
-    @validator('id')
-    def check_id(cls, v):
-        if v < 0:
-            raise ValueError('ID must be a non-negative integer.')
+
+class Task(BaseModel):
+    """
+    Represents a task with an ID, description, status, and due date.
+    
+    Attributes:
+        id (int): Unique identifier for the task.
+        description (str): Description of the task.
+        status (str): Status of the task (e.g., 'pending', 'completed').
+        due_date (Optional[datetime]): Due date of the task.
+    """
+    id: int
+    description: str
+    status: str = DEFAULT_STATUS
+    due_date: Optional[datetime] = None
+
+    @validator('status')
+    def check_status(cls, v):
+        if v not in ['pending', 'completed']:
+            raise ValueError("Status must be either 'pending' or 'completed'")
         return v
 
 
 class TaskManager(BaseModel):
+    """
+    Manages a list of tasks.
+    
+    Attributes:
+        tasks (List[Task]): List of tasks managed by this instance.
+    """
     tasks: List[Task] = []
 
-    def add_task(self, title: str, description: str = "", due_date: Optional[datetime] = None) -> None:
+    def add_task(self, description: str, due_date: Optional[datetime] = None) -> Task:
         """
-        Adds a new task to the list.
+        Adds a new task to the manager.
 
         Args:
-            title (str): The title of the task.
-            description (str): A detailed description of the task. Defaults to an empty string.
-            due_date (Optional[datetime]): The due date for the task. Defaults to None.
-        """
-        if not self.tasks:
-            new_id = 0
-        else:
-            new_id = max(task.id for task in self.tasks) + 1
+            description (str): Description of the task.
+            due_date (Optional[datetime]): Due date of the task. Defaults to None.
 
-        new_task = Task(id=new_id, title=title, description=description, due_date=due_date)
+        Returns:
+            Task: The newly added task.
+        """
+        if len(self.tasks) >= MAX_TASKS:
+            raise ValueError("Cannot add more tasks, maximum limit reached.")
+        
+        new_id = max([task.id for task in self.tasks], default=0) + 1
+        new_task = Task(id=new_id, description=description, due_date=due_date)
         self.tasks.append(new_task)
+        return new_task
 
-    def complete_task(self, task_id: int) -> None:
+    def update_task(self, task_id: int, status: Optional[str] = None, description: Optional[str] = None,
+                     due_date: Optional[datetime] = None) -> Task:
         """
-        Marks a task as completed.
+        Updates an existing task in the manager.
 
         Args:
-            task_id (int): The ID of the task to mark as completed.
-        """
-        for task in self.tasks:
-            if task.id == task_id:
-                task.completed = True
-                return
+            task_id (int): ID of the task to update.
+            status (Optional[str]): New status for the task. Defaults to None.
+            description (Optional[str]): New description for the task. Defaults to None.
+            due_date (Optional[datetime]): New due date for the task. Defaults to None.
 
-    def get_task(self, task_id: int) -> Optional[Task]:
+        Returns:
+            Task: The updated task.
         """
-        Retrieves a task by its ID.
+        task = self._find_task(task_id)
+        if status is not None:
+            task.status = status
+        if description is not None:
+            task.description = description
+        if due_date is not None:
+            task.due_date = due_date
+        return task
+
+    def delete_task(self, task_id: int) -> bool:
+        """
+        Deletes a task from the manager by its ID.
 
         Args:
-            task_id (int): The ID of the task to retrieve.
+            task_id (int): ID of the task to delete.
 
         Returns:
-            Optional[Task]: The Task object if found; otherwise, None.
+            bool: True if the task was deleted successfully, False otherwise.
         """
-        for task in self.tasks:
-            if task.id == task_id:
-                return task
-        return None
+        task = self._find_task(task_id)
+        self.tasks.remove(task)
+        return True
 
-    def list_tasks(self) -> List[Task]:
+    def get_tasks(self) -> List[Task]:
         """
-        Lists all tasks.
+        Retrieves all tasks managed by this instance.
 
         Returns:
-            List[Task]: A list of all tasks.
+            List[Task]: List of tasks.
         """
         return self.tasks
 
-    def remove_task(self, task_id: int) -> None:
+    def _find_task(self, task_id: int) -> Task:
         """
-        Removes a task from the list by its ID.
+        Finds a task by its ID.
 
         Args:
-            task_id (int): The ID of the task to remove.
-        """
-        for i, task in enumerate(self.tasks):
-            if task.id == task_id:
-                del self.tasks[i]
-                return
-
-    def __str__(self) -> str:
-        """
-        Returns a string representation of all tasks.
+            task_id (int): ID of the task to find.
 
         Returns:
-            str: A formatted string of all tasks.
+            Task: The found task.
+
+        Raises:
+            ValueError: If no task with the given ID is found.
         """
-        tasks_str = "\n".join(str(task) for task in self.tasks)
-        return f"TaskManager:\n{tasks_str}"
+        try:
+            return next(task for task in self.tasks if task.id == task_id)
+        except StopIteration:
+            raise ValueError(f"No task found with ID {task_id}")
+
+
+# Unit Tests
+def test_task_manager():
+    # Initialize a TaskManager
+    manager = TaskManager()
+    
+    # Test adding tasks
+    task1 = manager.add_task("Write code", datetime(2023, 12, 1))
+    assert len(manager.get_tasks()) == 1
+    assert task1.id == 1
+
+    task2 = manager.add_task("Test code")
+    assert len(manager.get_tasks()) == 2
+    assert task2.id == 2
+
+    # Test updating tasks
+    updated_task1 = manager.update_task(task1.id, status="completed", due_date=datetime(2023, 12, 2))
+    assert updated_task1.status == "completed"
+    assert updated_task1.due_date == datetime(2023, 12, 2)
+
+    # Test deleting tasks
+    manager.delete_task(task1.id)
+    assert len(manager.get_tasks()) == 1
+
+    # Test finding task by ID
+    found_task = manager._find_task(task2.id)
+    assert found_task.description == "Test code"
+
+    print("All tests passed!")
+
+
+if __name__ == "__main__":
+    test_task_manager()
 ```
 
 ### Explanation:
 
-1. **Task Model**:
-   - The `Task` class is a Pydantic model with fields: `id`, `title`, `description`, `due_date`, and `completed`.
-   - Validation is ensured using the `@validator` decorator for the `id` field to ensure it's non-negative.
+- **Task Class**: Represents a task with fields `id`, `description`, `status`, and `due_date`. The status is validated to be either 'pending' or 'completed'.
+  
+- **TaskManager Class**: Manages a list of tasks. It provides methods for adding, updating, deleting, and retrieving tasks.
+  
+- **Error Handling**: Includes error handling for tasks that do not exist when attempting updates or deletions.
 
-2. **TaskManager Class**:
-   - This class manages a list of tasks.
-   - Methods provided include: 
-     - `add_task`: Adds a new task with an auto-generated ID.
-     - `complete_task`: Marks a task as completed using its ID.
-     - `get_task`: Retrieves a task by its ID.
-     - `list_tasks`: Returns all tasks.
-     - `remove_task`: Removes a task by its ID.
-     - `__str__`: Provides a string representation of the manager's tasks.
+- **Unit Tests**: The `test_task_manager` function includes tests to verify the functionality of the `TaskManager` class.
 
-### Usage Example:
+### How to Run:
 
-```python
-# Create a TaskManager instance
-task_manager = TaskManager()
+1. Install necessary dependencies:
+   ```sh
+   pip install pydantic
+   ```
 
-# Add some tasks
-task_manager.add_task(title="Read a book", description="Finish reading 'Python Programming'.")
-task_manager.add_task(title="Write a report", due_date=datetime(2023, 12, 31))
+2. Run the script:
+   ```sh
+   python task_manager.py
+   ```
 
-# List all tasks
-print(task_manager)
-
-# Complete a task
-task_manager.complete_task(task_id=0)
-
-# Print the updated list of tasks
-print(task_manager)
-```
-
-### Notes:
-- The module adheres to the principles mentioned: code readability, simplicity, and testability.
-- Type hints are used extensively for clarity and validation with `mypy`.
-- No magic numbers or duplicate code are present.
-
-You can run this code in a Python environment that supports Pydantic. If you need more features like persistence or integration with other systems, let me know!
+The output should print "All tests passed!" if everything works correctly. This module adheres to the principles of simplicity, readability, and testability as per your requirements.

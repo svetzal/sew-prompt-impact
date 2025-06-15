@@ -1,160 +1,122 @@
-Below is an example Python module named task_manager.py that implements a simple task management system. This module defines a Task class to represent individual tasks and a TaskManager class to add, remove, list, and mark tasks as completed.
+Below is an example Python module (for example, save it as task_manager.py) that defines a Task and TaskManager class. You can import this module into other programs or run it directly to test its functionality.
 
-────────────────────────────
-# Begin task_manager.py
+--------------------------------------------------
+#!/usr/bin/env python3
+"""
+task_manager.py
+
+A Python module for managing a list of tasks.
+Each task has an id, a description, and a completed status.
+
+Usage as a module:
+  from task_manager import TaskManager
+  tm = TaskManager()
+  tm.add_task("Buy groceries")
+  tm.list_tasks()
+  
+Usage as a script:
+  python task_manager.py
+"""
 
 class Task:
-    def __init__(self, task_id, description, completed=False):
-        """
-        Initialize a new task.
-
-        Args:
-            task_id (int): A unique identifier for the task.
-            description (str): A text description of the task.
-            completed (bool): Task completion status. Defaults to False.
-        """
-        self.task_id = task_id
+    def __init__(self, task_id, description):
+        self.id = task_id
         self.description = description
-        self.completed = completed
+        self.completed = False
 
-    def mark_completed(self):
-        """Mark the task as completed."""
+    def mark_complete(self):
         self.completed = True
 
-    def __str__(self):
-        status = 'Done' if self.completed else 'Pending'
-        return f"[{self.task_id}] {self.description} - {status}"
+    def __repr__(self):
+        status = "✓" if self.completed else "✗"
+        return f"[{status}] {self.id}: {self.description}"
 
 
 class TaskManager:
     def __init__(self):
-        """Initialize the Task Manager with an empty list of tasks."""
-        self.tasks = []
+        self.tasks = {}
         self.next_id = 1
 
     def add_task(self, description):
-        """
-        Add a new task.
-
-        Args:
-            description (str): Task description.
-
-        Returns:
-            Task: The newly created task.
-        """
+        """Adds a new task with the given description. Returns the Task object."""
         task = Task(self.next_id, description)
-        self.tasks.append(task)
+        self.tasks[self.next_id] = task
         self.next_id += 1
+        print(f"Added task: {task}")
         return task
 
-    def get_task(self, task_id):
-        """
-        Retrieve a task by its ID.
-
-        Args:
-            task_id (int): The ID of the task to retrieve.
-
-        Returns:
-            Task or None: The task with the specified id, or None if not found.
-        """
-        for task in self.tasks:
-            if task.task_id == task_id:
-                return task
-        return None
-
     def remove_task(self, task_id):
-        """
-        Remove a task by its ID.
-
-        Args:
-            task_id (int): The ID of the task to remove.
-
-        Returns:
-            bool: True if a task was removed, False if not found.
-        """
-        task = self.get_task(task_id)
-        if task:
-            self.tasks.remove(task)
-            return True
-        return False
-
-    def mark_task_completed(self, task_id):
-        """
-        Mark a specific task as completed.
-
-        Args:
-            task_id (int): The ID of the task to mark completed.
-
-        Returns:
-            bool: True if the task was found and marked, False otherwise.
-        """
-        task = self.get_task(task_id)
-        if task:
-            task.mark_completed()
-            return True
-        return False
-
-    def list_tasks(self, completed=None):
-        """
-        List tasks with an optional filter on completion status.
-
-        Args:
-            completed (bool, optional): If provided, filter tasks by completed status.
-
-        Returns:
-            list: A list of tasks that match the criteria.
-        """
-        if completed is None:
-            return self.tasks
+        """Removes the task with the given id."""
+        if task_id in self.tasks:
+            removed_task = self.tasks.pop(task_id)
+            print(f"Removed task: {removed_task}")
         else:
-            return [task for task in self.tasks if task.completed == completed]
+            print(f"No task with id {task_id} found.")
 
-    def __str__(self):
+    def mark_task_complete(self, task_id):
+        """Marks the task with the given id as complete."""
+        if task_id in self.tasks:
+            self.tasks[task_id].mark_complete()
+            print(f"Task {task_id} marked as complete.")
+        else:
+            print(f"No task with id {task_id} found.")
+
+    def list_tasks(self, show_all=True):
+        """
+        Lists tasks.
+        If show_all is True, lists all tasks.
+        Otherwise, lists only incomplete tasks.
+        """
         if not self.tasks:
-            return "No tasks available."
-        result = "\n".join(str(task) for task in self.tasks)
-        return result
+            print("No tasks yet!")
+            return
 
+        for task in self.tasks.values():
+            if show_all or not task.completed:
+                print(task)
 
-# If this module is run as the main program, demonstrate its functionality.
-if __name__ == "__main__":
+    def clear_completed(self):
+        """Removes all tasks that are marked as completed."""
+        completed_ids = [task_id for task_id, task in self.tasks.items() if task.completed]
+        for task_id in completed_ids:
+            self.remove_task(task_id)
+
+# If run as a script, demonstrate basic usage.
+if __name__ == '__main__':
     tm = TaskManager()
 
-    # Adding tasks
+    print("=== Adding Tasks ===")
     tm.add_task("Buy groceries")
-    tm.add_task("Call Alice")
-    tm.add_task("Prepare presentation")
+    tm.add_task("Write email to manager")
+    tm.add_task("Read Python documentation")
 
-    print("All Tasks:")
-    print(tm)
-    print()
+    print("\n=== Listing All Tasks ===")
+    tm.list_tasks()
 
-    # Mark the second task as completed
-    tm.mark_task_completed(2)
+    print("\n=== Marking Task 2 as Complete ===")
+    tm.mark_task_complete(2)
 
-    print("Tasks after marking task 2 as completed:")
-    print(tm)
-    print()
+    print("\n=== Listing Incomplete Tasks ===")
+    tm.list_tasks(show_all=False)
 
-    # List only pending tasks
-    pending_tasks = tm.list_tasks(completed=False)
-    print("Pending Tasks:")
-    for task in pending_tasks:
-        print(task)
-
-    # Remove a task
+    print("\n=== Removing Task 1 ===")
     tm.remove_task(1)
-    print("\nTasks after removing task 1:")
-    print(tm)
 
-# End task_manager.py
-────────────────────────────
+    print("\n=== Listing All Tasks ===")
+    tm.list_tasks()
+    
+    print("\n=== Clearing Completed Tasks ===")
+    tm.clear_completed()
+    
+    print("\n=== Final Task List ===")
+    tm.list_tasks()
+--------------------------------------------------
 
-Explanation:
+This module provides basic functionality:
+• Adding new tasks
+• Removing tasks by their ID
+• Marking tasks as complete
+• Listing tasks (all or only incomplete ones)
+• Clearing all completed tasks
 
-1. The Task class represents a single task with an ID, a description, and a flag indicating whether it’s completed.
-2. The TaskManager class maintains a list of Task objects. It includes methods to add a new task (automatically assigning an incrementing ID), get a task, remove a task, mark a task as completed, and list tasks (with an optional filter based on completion status).
-3. At the bottom of the module, a basic demonstration is provided which runs if the module is executed as the main program.
-4. You can import this module into other Python scripts to manage tasks programmatically.
-
-This module can be extended further based on your needs, such as saving tasks to a file or integrating with a GUI.
+You can extend this module as needed—for example by adding persistence (saving to and reading from files) or more advanced task management features.

@@ -1,114 +1,105 @@
-Sure! Below is a Python module named `task_manager.py` that manages a list of tasks. This module includes functionalities to add, update, remove, and list tasks. It also uses type hints and follows the best practices mentioned in your guidelines.
+Certainly! Below is a Python module designed to manage a list of tasks. This module includes functionalities to add, remove, and list tasks, along with validation and proper documentation. The code follows the principles outlined in the Baseline Conventions, focusing on simplicity, readability, and testability.
 
 ```python
-# task_manager.py
-
 from typing import List, Optional
-from pydantic import BaseModel, validator
-import uuid
+from pydantic import BaseModel
 
 class Task(BaseModel):
-    id: str = None
+    id: int
     description: str
     completed: bool = False
-    
-    @validator('id', pre=True)
-    def generate_id(cls, v):
-        if not v:
-            return str(uuid.uuid4())
-        return v
 
-def add_task(tasks: List[Task], description: str) -> List[Task]:
-    """Add a new task to the list."""
-    new_task = Task(description=description)
-    tasks.append(new_task)
-    return tasks
+    class Config:
+        allow_mutation = False
 
-def update_task(tasks: List[Task], task_id: str, completed: Optional[bool] = None, description: Optional[str] = None) -> List[Task]:
-    """Update an existing task."""
-    for task in tasks:
-        if task.id == task_id:
-            if completed is not None:
-                task.completed = completed
-            if description is not None:
-                task.description = description
-            break
-    return tasks
+class TaskManager:
+    def __init__(self):
+        self._tasks: List[Task] = []
+        self._next_id: int = 1
 
-def remove_task(tasks: List[Task], task_id: str) -> List[Task]:
-    """Remove a task by ID."""
-    tasks = [task for task in tasks if task.id != task_id]
-    return tasks
+    @property
+    def tasks(self) -> List[Task]:
+        return self._tasks.copy()
 
-def list_tasks(tasks: List[Task]) -> None:
-    """List all tasks."""
-    print("Tasks:")
-    for task in tasks:
-        status = "Completed" if task.completed else "Pending"
-        print(f"{task.id} - {task.description} ({status})")
+    def add_task(self, description: str) -> None:
+        """
+        Adds a new task to the list with the given description.
+        """
+        if not description.strip():
+            raise ValueError("Task description cannot be empty")
 
-# Example usage
+        new_task = Task(id=self._next_id, description=description)
+        self._tasks.append(new_task)
+        self._next_id += 1
+
+    def remove_task(self, task_id: int) -> None:
+        """
+        Removes the task with the given ID from the list.
+        Raises ValueError if no such task exists.
+        """
+        for i, task in enumerate(self._tasks):
+            if task.id == task_id:
+                del self._tasks[i]
+                return
+        raise ValueError(f"Task with ID {task_id} not found")
+
+    def complete_task(self, task_id: int) -> None:
+        """
+        Marks the task with the given ID as completed.
+        Raises ValueError if no such task exists or it is already completed.
+        """
+        for task in self._tasks:
+            if task.id == task_id and not task.completed:
+                task.completed = True
+                return
+        raise ValueError(f"Task with ID {task_id} not found or already completed")
+
+    def incomplete_task(self, task_id: int) -> None:
+        """
+        Marks the task with the given ID as incomplete.
+        Raises ValueError if no such task exists or it is already incomplete.
+        """
+        for task in self._tasks:
+            if task.id == task_id and task.completed:
+                task.completed = False
+                return
+        raise ValueError(f"Task with ID {task_id} not found or already incomplete")
+
+    def get_task(self, task_id: int) -> Optional[Task]:
+        """
+        Returns the task with the given ID, or None if it does not exist.
+        """
+        for task in self._tasks:
+            if task.id == task_id:
+                return task
+        return None
+
+# Example usage:
 if __name__ == "__main__":
-    tasks: List[Task] = []
+    manager = TaskManager()
+    manager.add_task("Buy groceries")
+    manager.add_task("Clean the house")
+    
+    print(manager.tasks)
+    
+    try:
+        manager.complete_task(1)
+        print(manager.tasks)
+    except ValueError as e:
+        print(e)
 
-    tasks = add_task(tasks, description="Buy groceries")
-    tasks = update_task(tasks, task_id=tasks[-1].id, completed=True)
-    tasks = remove_task(tasks, task_id=tasks[-1].id)
-    list_tasks(tasks)
+    try:
+        manager.remove_task(2)
+        print(manager.tasks)
+    except ValueError as e:
+        print(e)
 ```
 
-### Explanation:
+### Key Points:
 
-1. **Task Model**: The `Task` class uses Pydantic to define the structure of a task with validation for its fields. It includes an `id` which is auto-generated if not provided.
+1. **Task Class**: Uses `pydantic.BaseModel` to ensure data validation and immutability.
+2. **TaskManager Class**: Manages the list of tasks, providing methods to add, remove, complete, and get tasks.
+3. **Type Hints & Docstrings**: Follows the guidelines for type hints and docstring formatting.
+4. **Testing**: This example includes basic usage at the bottom for demonstration purposes. For a full-fledged module, you would include unit tests to ensure all functionalities work as expected.
 
-2. **Functions**:
-   - `add_task`: Adds a new task to the list.
-   - `update_task`: Updates the properties of an existing task by ID.
-   - `remove_task`: Removes a task from the list by ID.
-   - `list_tasks`: Prints all tasks in the list, showing their status.
-
-3. **Example Usage**: The example usage at the bottom demonstrates how to use these functions.
-
-### Testing:
-
-To ensure correctness and maintainability, you can write tests for each function. Here's an example using `pytest`:
-
-```python
-# test_task_manager.py
-
-from task_manager import Task, add_task, update_task, remove_task, list_tasks
-
-def test_add_task():
-    tasks = []
-    tasks = add_task(tasks, description="Buy groceries")
-    assert len(tasks) == 1
-    assert tasks[0].description == "Buy groceries"
-    assert tasks[0].completed == False
-
-def test_update_task():
-    tasks = [Task(description="Buy groceries")]
-    tasks = update_task(tasks, task_id=tasks[0].id, completed=True)
-    assert tasks[0].completed == True
-
-def test_remove_task():
-    tasks = [Task(description="Buy groceries")]
-    tasks = remove_task(tasks, task_id=tasks[0].id)
-    assert len(tasks) == 0
-
-def test_list_tasks(capsys):
-    tasks = [Task(description="Buy groceries"), Task(description="Clean the house", completed=True)]
-    list_tasks(tasks)
-    captured = capsys.readouterr()
-    assert "Tasks:" in captured.out
-    assert "Buy groceries" in captured.out
-    assert "Clean the house (Completed)" in captured.out
-```
-
-### Running Tests:
-
-You can run the tests using the following command:
-```sh
-pytest test_task_manager.py
-```
-
-This ensures that your code behaves as expected and follows the best practices outlined in the guidelines.
+This module adheres to the principles of simplicity, readability, and robustness, making it easy to understand and maintain.

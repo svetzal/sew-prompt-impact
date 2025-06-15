@@ -1,23 +1,40 @@
-| Prompt Style | Key Differences                                 | Strengths                                                           | Weaknesses                                          |
-|--------------|--------------------------------------------------|---------------------------------------------------------------------|------------------------------------------------------|
-| fancy        | Longer, more detailed instructions emphasizing Python engineering principles and code quality standards | Produces highly structured code with extensive docstrings, type hints, and adherence to standards | Potentially verbose, with extra overhead for simpler tasks |
-| plain        | Simpler, shorter instructions with minimal elaboration on best practices                 | Concise, straightforward code that is quick to read and understand             | Less thoroughness, fewer advanced features such as type hints or validators |
+| Prompt Style | Key Differences                                                                                                     | Strengths                                                                                                                                          | Weaknesses                                                                                                                                              |
+|-------------:|:--------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------|:---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **fancy**    | • Uses pydantic.BaseModel for validation  
+• Includes a detailed main() demo  
+• Strict type hints, docstrings, and style checks | • Robust validation and type safety  
+• Thorough demonstration of usage  
+• Adheres to more advanced engineering conventions                                                                                 | • Slightly higher complexity due to external library dependency (pydantic)  
+• May be overkill for simpler needs                                                                                                 |
+| **plain**    | • Minimal classes without external libraries  
+• Straightforward usage and script runner demo                                                                                      | • Very accessible with no extra dependencies  
+• Clear, direct approach  
+• Easy to plug into simple scripts or demos                                                                                         | • Limited built-in validation  
+• Fewer design patterns or guidelines enforced                                                                                     |
+| **partial**  | • Uses standard library dataclasses  
+• Inline test harness in __main__  
+• Middle ground between minimalism and structure                                                                                    | • Lightweight and pythonic (dataclasses)  
+• Clear docstrings, with tests for demonstration  
+• Balanced approach in features and complexity                                                                                     | • No advanced validations (compared to pydantic)  
+• Slightly less user-friendly test format than the "fancy" example's thorough demonstration                                       |
 
---------------------------------------------------------------------------------
+---
 
-Extended Qualitative Analysis:
+## Qualitative Analysis
 
 1. Which prompt style gives the best results overall?
-   • The “fancy” prompt tends to produce a more polished, production-grade solution. It directs the model to incorporate engineering best practices, apply extensive type hints, docstrings, and adhere to style guidelines (e.g., psychologic safety, commits, flake8 compliance). For teams or users who value code clarity, maintainability, and deeper validation, “fancy” is more likely to be the better option.
-   • The “plain” prompt yields usable code but with lighter focus on best practices. This approach is often suitable for rapid prototyping or simpler use cases where comprehensive docstrings, advanced type safety, or style guides are not the highest priority.
+
+   The "fancy" prompt style (using pydantic and thorough type hints) provides the most robust, production-ready solution. It handles data validation through pydantic and includes a complete demonstration of usage in the main() function. However, depending on the scenario, this complexity might be unnecessary or heavy if you do not require strict validation or you prefer to avoid third-party dependencies.
 
 2. What aspects of the model's response differ between the different prompt styles?
-   • Overall Code Complexity: The “fancy” output is more complex and adopts standardized Pythonic patterns (with pydantic, docstring format, style checks), whereas the “plain” output is simpler.
-   • Validation and Error Handling: The “fancy” version includes pydantic validators to ensure data integrity (e.g., empty task description validation). The “plain” code does not utilize additional validation libraries.
-   • Type Annotations: While both outputs can include type hints, the “fancy” prompt specifically enforces thorough type coverage with mypy checks.
-   • Documentation: The “fancy” prompt yields comprehensive docstrings and usage examples, while the “plain” prompt’s docstrings are more minimal.
+
+   • The "fancy" output uses pydantic, focusing on strong validation, advanced docstrings, and strict type coverage.  
+   • The "plain" output opts for a simpler, no-dependencies approach and focuses on being easy to read and integrate.  
+   • The "partial" output stands between the other two, using standard library dataclasses for moderate structure and built-in tests, without external dependencies.
 
 3. What aspects of the model's response are consistent across all prompt styles?
-   • Core Functionality: Both versions allow adding, retrieving, updating, and listing tasks. They showcase a Task-like class or structure and a managing component or class for handling multiple tasks.
-   • Code Readability: Although the “fancy” version is more detailed, both outputs remain understandable, reflecting Python’s straightforward syntax.
-   • Overall Objective: Regardless of style, the model respects the request to create a module that manages tasks, providing methods to add, remove, and update tasks efficiently.
+
+   • They all produce a Task or equivalent class to store id, description, and completion status.  
+   • Each includes a TaskManager (or similar) that stores tasks in-memory, with methods to add, remove, complete, and list tasks.  
+   • All approaches provide a short demonstration or test harness in a main block, illustrating usage.  
+   • Common best practices are broadly followed: reading like an explanation (revealing intent), using a single-purpose approach, and giving a straightforward API to manage tasks.

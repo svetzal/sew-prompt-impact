@@ -1,23 +1,20 @@
-| Prompt Style | Key Features                                                                             | Strengths                                                                                                             | Weaknesses                                                                                                              |
-|-------------:|:-----------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------|:------------------------------------------------------------------------------------------------------------------------|
-|       fancy  | • Detailed baseline conventions and design principles. <br> • Uses Pydantic models. <br> • Imposes strict linting and type checking. | • Enforces good coding standards. <br> • Well-structured, full-featured solution. <br> • Clear docs and type hints.    | • Might feel heavier or too detailed for simple tasks. <br> • Requires additional dependencies like Pydantic.           |
-|        plain | • Minimal instructions. <br> • Simple class-based design. <br> • No strict domain modeling or validation.                | • Straightforward and easy to grasp. <br> • No extra dependencies.                                                    | • Lacks robust validation and typed data models. <br> • Less detail on code style, testing, or usage.                   |
+| Prompt Style | Key Differences                                                     | Strengths                                                                             | Weaknesses                                                                                         |
+|--------------|-------------------------------------------------------------------|---------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| fancy        | Utilizes Pydantic, docstrings, type hints, and detailed tests.   | Highly robust: includes validation, strict typing, docstrings, thorough tests.        | Can be overkill for simple use-cases. Requires extra dependencies (e.g., pydantic).                  |
+| plain        | Minimalist approach with just a Task and TaskManager classes.     | Simple, easy to read, low overhead.                                                  | Lacks type hints, detailed tests, or complex validation.                                             |
+| partial      | Mid-level, includes a test function, but lacks Pydantic or hints. | Has basic tests, straightforward classes, less overhead than the “fancy” approach.    | Missing advanced validations (type hints, Pydantic), less comprehensive than the fancy version.      |
 
----
+--------------------------------------------------------------------------------
 
-## More Extensive Qualitative Analysis
+1) Which prompt style gives the best results overall?  
+   • The "fancy" prompt style generally provides the most comprehensive and production-ready solution. It includes type hints (passing mypy checks), uses Pydantic for validation, and covers functionality with clear unit tests. While it might be overkill for some simpler tasks, from a software engineering standpoint, it delivers a robust, maintainable, and well-documented final product.
 
-1. Which prompt style gives the best results overall?  
-   • The "fancy" style yields a more robust and production-ready module. It enforces strong validation logic (via Pydantic), includes thorough type hints, follows strict linting and formatting standards, and documents the code meticulously. Hence, if "best" means most professional and ready for larger-scale projects, the "fancy" prompt’s result is superior.  
-   • However, in simpler scenarios where minimal code is sufficient, the "plain" style might feel more accessible and direct.
+2) What aspects of the model's response differ between the different prompt styles?  
+   • The "fancy" prompt output includes advanced features: strict typing, Pydantic validation, detailed docstrings, and unit tests that thoroughly test functionality.  
+   • The "plain" prompt output is a straightforward, minimalistic script with neither type checks nor comprehensive tests. It is the most bare-bones solution among the three.  
+   • The "partial" prompt output strikes a balance: it provides a test function and some basic class designs but lacks the completeness of the "fancy" version (omitting Pydantic, type hints, and more formal docstrings).
 
-2. What aspects of the model's response differ between the different prompt styles?  
-   • Code Complexity: The fancy style is more sophisticated, leverages Pydantic models, and includes validation checks; the plain style is more minimal.  
-   • Documentation and Standards: The fancy style strongly highlights linting, type hints, and docstring formatting, while the plain style offers simpler docstrings and no explicit linting guidelines.  
-   • Structural Design: The fancy style references design heuristics (like "functional core, imperative shell") and includes more functionalities (e.g., generating new IDs, marking tasks as completed). The plain style focuses on straightforward list manipulation.  
-   • Dependencies: The fancy style employs Pydantic for data validation, while the plain style avoids additional libraries.
-
-3. What aspects of the model's response are consistent across all prompt styles?  
-   • Core Functionality: Both styles include the central functionality to add, remove, update, and list tasks.  
-   • Readability: Despite differences, each example is comprehensible and uses sensible naming for classes and methods.  
-   • Clarity of Usage: Both outputs demonstrate usage examples, albeit with varying detail and complexity, showing how to interact with the class.
+3) What aspects of the model's response are consistent across all prompt styles?  
+   • All three responses include a Task-like object or class and a managing class (TaskManager) with methods to add, update, and remove tasks.  
+   • Each solution can handle basic task workflows (create tasks, mark them completed or remove them, and list them).  
+   • All solutions demonstrate a clear separation of concerns: a Task or data class to represent individual tasks, and a TaskManager to control collections of tasks.  

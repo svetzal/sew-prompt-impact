@@ -1,6 +1,6 @@
-Certainly! Below is a simple Python module called `task_manager.py` that allows you to manage a list of tasks. This module provides basic functionalities such as adding, removing, listing, and marking tasks as completed.
+Certainly! Below is a simple Python module called `task_manager` that allows you to manage a list of tasks. This module includes functions to add, remove, list, and mark tasks as completed.
 
-### `task_manager.py`
+### task_manager.py
 
 ```python
 class Task:
@@ -15,8 +15,8 @@ class Task:
         self.completed = False
 
     def __str__(self):
-        status = "Completed" if self.completed else "Incomplete"
-        return f"{self.description} - {status}"
+        status = "✓" if self.completed else "✗"
+        return f"[{status}] {self.description}"
 
 
 class TaskManager:
@@ -26,7 +26,7 @@ class TaskManager:
     def add_task(self, description):
         task = Task(description)
         self.tasks.append(task)
-        print(f"Task added: {task}")
+        print(f"Task added: {description}")
 
     def remove_task(self, index):
         if 0 <= index < len(self.tasks):
@@ -38,8 +38,9 @@ class TaskManager:
     def list_tasks(self):
         if not self.tasks:
             print("No tasks to display")
-        for i, task in enumerate(self.tasks):
-            print(f"{i}: {task}")
+        else:
+            for i, task in enumerate(self.tasks):
+                print(f"{i}: {task}")
 
     def mark_task_as_completed(self, index):
         if 0 <= index < len(self.tasks):
@@ -59,40 +60,33 @@ class TaskManager:
 # Example usage
 if __name__ == "__main__":
     manager = TaskManager()
-
     manager.add_task("Buy groceries")
     manager.add_task("Do laundry")
-    manager.add_task("Call mom")
-
     manager.list_tasks()
-
-    manager.mark_task_as_completed(1)
-
+    manager.mark_task_as_completed(0)
     manager.list_tasks()
-
-    manager.remove_task(2)
-
+    manager.remove_task(1)
     manager.list_tasks()
 ```
 
 ### Explanation
 
 1. **Task Class**:
-   - `__init__(self, description)`: Initializes a task with a description and sets its status to incomplete.
+   - `__init__(self, description)`: Initializes a task with a description and sets it as incomplete.
    - `mark_as_completed(self)`: Marks the task as completed.
    - `mark_as_incomplete(self)`: Marks the task as incomplete.
    - `__str__(self)`: Returns a string representation of the task.
 
 2. **TaskManager Class**:
    - `__init__(self)`: Initializes an empty list to store tasks.
-   - `add_task(self, description)`: Adds a new task to the list.
-   - `remove_task(self, index)`: Removes a task from the list based on its index.
-   - `list_tasks(self)`: Lists all tasks with their status.
-   - `mark_task_as_completed(self, index)`: Marks a task as completed based on its index.
-   - `mark_task_as_incomplete(self, index)`: Marks a task as incomplete based on its index.
+   - `add_task(self, description)`: Adds a new task with the given description.
+   - `remove_task(self, index)`: Removes the task at the specified index.
+   - `list_tasks(self)`: Lists all tasks with their status (completed or not).
+   - `mark_task_as_completed(self, index)`: Marks the task at the specified index as completed.
+   - `mark_task_as_incomplete(self, index)`: Marks the task at the specified index as incomplete.
 
 ### Example Usage
 
-When you run the module directly (i.e., `python task_manager.py`), it demonstrates how to use the `TaskManager` class by adding, listing, marking, and removing tasks.
+When you run the script directly (i.e., `python task_manager.py`), it demonstrates how to use the `TaskManager` class by adding tasks, listing them, marking one as completed, and removing another.
 
-Feel free to expand this module with additional features or modify it to suit your needs!
+Feel free to expand or modify this module to suit your specific needs!

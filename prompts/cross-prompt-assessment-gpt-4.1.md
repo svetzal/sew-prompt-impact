@@ -1,30 +1,40 @@
-| Prompt Style | Code Complexity | Use of Type Hints & pydantic | Adherence to Styling Conventions | Feature Set | Overall Presentation |
-|--------------|----------------|------------------------------|-----------------------------------|------------|----------------------|
-| Fancy        | Medium-High    | Yes                          | Very High (flake8, black, etc.)   | Rich (add, complete, remove, count, plus robust error handling) | Polished, methodical, detailed docstrings |
-| Plain        | Low            | No                           | Moderate (less detailed conventions) | Basic (add, remove, complete, list) | Direct, minimalistic, simpler style |
+**Super-Condensed Comparison Table**
+
+| Prompt Style | Code Complexity     | Features Included                                | Use of Frameworks       | Use of Type Hints/Validation | Design Principles                                                                                |
+|--------------|---------------------|--------------------------------------------------|-------------------------|-----------------------------|--------------------------------------------------------------------------------------------------|
+| Fancy        | High               | CRUD ops, filtering by completion, UUID-based ID | pydantic, validators    | Full type hints with Pydantic | Rigorously follows advanced best practices: docstrings, validation, structured in a class-based approach |
+| Plain        | Low                | Basic add/list/delete/complete                   | Built-in only           | Minimal or none             | Simple approach, minimal overhead; code is easy to follow but lacks advanced validation or strict checks  |
+| Partial      | Medium             | CRUD-like ops, optional filtering                | Python dataclasses, uuid| Some type usage via stdlib  | Balanced approach using some best practices but not as exhaustive as the “fancy” style                           |
 
 ---
 
-1) Which prompt style gives the best results overall?
+## Qualitative Analysis
 
-The “fancy” prompt style produces a more robust, polished module that follows strict coding principles: it has type hints, uses pydantic models, and demonstrates thorough adherence to formatting and testing standards. As a result, it balances readability, correctness, and maintainability. The “plain” prompt style is simpler and easier to grasp initially, but it does not provide type annotations or stronger validation, making it less ideal in production scenarios involving complex data or collaborative teams.
+### 1. Which prompt style gives the best results overall?
+- The **fancy** prompt style generally produces the most robust, professionally structured, and feature-rich code. It applies advanced Python features (pydantic for validation, docstrings, type hints) and clarifies the code’s intentions. This style might be ideal for production-grade applications or scenarios where strict validation and clarity are paramount.
 
-2) What aspects of the model's response differ between the different prompt styles?
+### 2. What aspects of the model's response differ between the different prompt styles?
+1. **Validation & Type Hints**  
+   • Fancy uses `pydantic.BaseModel` and enforces strict validation as well as thorough type hints.  
+   • Plain omits advanced validation and largely omits type hints.  
+   • Partial uses Python’s standard `dataclass` and includes minimal type usage, but not to the same extent as fancy.
 
-• Strictness and Structure:  
-  – The “fancy” style enforces type hints, pydantic for data validation, docstrings, and linting/formatting principles; it also includes error handling in a more Pythonic way.  
-  – The “plain” style is more direct, focusing on minimal functionality with fewer safeguards and simpler design patterns.  
+2. **Feature Completeness**  
+   • Fancy code includes filtering for completed tasks, update operations, and docstrings describing each operation.  
+   • Plain version focuses on core operations (add, list, complete, remove) with minimal extra structure.  
+   • Partial includes basic CRUD and filtering but doesn’t utilize a specialized library for validation.
 
-• Additional Features:  
-  – The “fancy” style supports tasks with optional descriptions, toggling completion status via a method on the data model, and a more explicit approach to error handling.  
-  – The “plain” style demonstrates a simpler class design with straightforward methods but omits advanced usage of Python’s typing and pydantic.  
+3. **Design Principles & Complexity**  
+   • Fancy meticulously follows a wide variety of principles (immutability, docstrings, small increments, type coverage).  
+   • Plain emphasizes simplicity, minimal overhead, and easy readability for small codebases.  
+   • Partial strikes a balance—some best practices (like immutability in dataclasses) and a clear approach, but not as many advanced patterns as fancy.
 
-3) What aspects of the model's response are consistent across all prompt styles?
-
-• Core Functionality:  
-  – Both generate functional code to add tasks, mark them as completed, and remove tasks.  
-  – Both provide a means of listing tasks, including filtering for completed vs. incomplete tasks.  
-
-• Usability and Example Usage:  
-  – Each style supplies an example on how to instantiate the manager and perform basic operations.  
-  – Both illustrate a similar logic flow, looping through tasks in an in-memory list and updating their attributes.
+### 3. What aspects of the model's response are consistent across all prompt styles?
+1. **Core Task Management**  
+   All three contain fundamental operations: add tasks, list tasks, mark tasks as completed, and delete tasks.  
+2. **Clear Separation of Concerns**  
+   Each approach keeps data representation and business logic (task management) organized within classes or structures.  
+3. **Basic Flexibility**  
+   All outputs can be easily extended (via CLI, saving/loading from files, additional fields, etc.).  
+4. **Fundamental Code Readability**  
+   Even though they differ in complexity, all styles present readable code that a human programmer can follow.

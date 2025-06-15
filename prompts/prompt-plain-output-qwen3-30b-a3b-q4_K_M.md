@@ -1,153 +1,172 @@
 
 
+Here's a well-structured Python module for managing a list of tasks. It includes core functionality for adding, completing, viewing, and deleting tasks, along with sorting options.
+
 ```python
+"""
+task_manager.py
+
+A module to manage a list of tasks with basic CRUD operations and sorting capabilities.
+"""
+
 class Task:
     """
-    Represents a single task with a description, priority, and completion status.
+    Represents a single task with a description, priority, completion status, and optional due date.
     
     Attributes:
-        description (str): A brief description of the task.
-        priority (int): Priority level (lower numbers mean higher priority).
-        completed (bool): Whether the task has been completed.
+        description (str): Description of the task.
+        priority (int): Priority level (1 = high, 3 = low).
+        completed (bool): Whether the task is completed.
+        due_date (str, optional): Due date in "YYYY-MM-DD" format.
     """
-
-    def __init__(self, description, priority=1, completed=False):
+    
+    def __init__(self, description: str, priority: int = 2, completed: bool = False, due_date: str = None):
         self.description = description
         self.priority = priority
         self.completed = completed
-
-    def mark_complete(self):
-        """Mark the task as completed."""
-        self.completed = True
-
-    def mark_incomplete(self):
-        """Mark the task as not completed."""
-        self.completed = False
+        self.due_date = due_date
 
     def __str__(self):
-        return f"{self.description} (Priority: {self.priority}, Completed: {self.completed})"
+        """Return a string representation of the task."""
+        status = "✅" if self.completed else "❌"
+        priority_str = "High" if self.priority == 1 else "Medium" if self.priority == 2 else "Low"
+        return f"{status} {self.description} (Priority: {priority_str})"
+
+    def mark_as_completed(self):
+        """Mark the task as completed."""
+        self.completed = True
 
 
 class TaskManager:
     """
-    Manages a collection of tasks, allowing for addition, removal, updating, and filtering.
+    Manages a collection of Task objects with methods to add, complete, list, and delete tasks.
+    
+    Attributes:
+        tasks (list): List of Task objects.
     """
-
+    
     def __init__(self):
-        """Initialize an empty list of tasks."""
         self.tasks = []
 
-    def add_task(self, description, priority=1):
+    def add_task(self, description: str, priority: int = 2, due_date: str = None):
         """
-        Add a new task with the given description and priority.
+        Add a new task to the list.
         
         Args:
             description (str): Description of the task.
-            priority (int): Priority level (default is 1).
-        
-        Returns:
-            Task: The newly created task.
+            priority (int): Priority level (1-3).
+            due_date (str): Optional due date in "YYYY-MM-DD" format.
         """
-        task = Task(description, priority)
+        if not (1 <= priority <= 3):
+            raise ValueError("Priority must be 1 (high), 2 (medium), or 3 (low).")
+        
+        task = Task(description, priority, due_date=due_date)
         self.tasks.append(task)
-        return task
 
-    def remove_task(self, index):
+    def complete_task(self, task_index: int):
         """
-        Remove a task at the specified index.
+        Mark a task as completed by its index.
         
         Args:
-            index (int): Index of the task to be removed.
-        
-        Raises:
-            IndexError: If the index is out of range.
+            task_index (int): Index of the task to mark as completed.
         """
-        if 0 <= index < len(self.tasks):
-            self.tasks.pop(index)
+        if 0 <= task_index < len(self.tasks):
+            self.tasks[task_index].mark_as_completed()
         else:
-            raise IndexError("Task index out of range")
+            raise IndexError("Task index out of range.")
 
-    def update_task(self, index, description=None, priority=None, completed=None):
+    def list_tasks(self, completed: bool = None, sort_by: str = "priority"):
         """
-        Update an existing task at the specified index.
+        List all tasks, optionally filtered by completion status and sorted.
         
         Args:
-            index (int): Index of the task to be updated.
-            description (str, optional): New description for the task.
-            priority (int, optional): New priority for the task.
-            completed (bool, optional): Update the completion status.
-        
-        Raises:
-            IndexError: If the index is out of range.
-        """
-        if 0 <= index < len(self.tasks):
-            task = self.tasks[index]
-            if description is not None:
-                task.description = description
-            if priority is not None:
-                task.priority = priority
-            if completed is not None:
-                task.completed = completed
-        else:
-            raise IndexError("Task index out of range")
-
-    def get_tasks(self, completed=None, priority=None):
-        """
-        Retrieve a filtered list of tasks.
-        
-        Args:
-            completed (bool, optional): Filter tasks by completion status.
-            priority (int, optional): Filter tasks by priority level.
+            completed (bool, optional): Filter by completion status (True = completed, False = incomplete).
+            sort_by (str): Sort by "priority", "due_date", or "description".
         
         Returns:
-            list: A list of tasks matching the criteria.
+            list: Filtered and sorted list of tasks.
         """
         filtered = self.tasks
         if completed is not None:
-            filtered = [task for task in filtered if task.completed == completed]
-        if priority is not None:
-            filtered = [task for task in filtered if task.priority == priority]
+            filtered = [task for task in self.tasks if task.completed == completed]
+        
+        if sort_by == "priority":
+            filtered.sort(key=lambda x: x.priority)
+        elif sort_by == "due_date":
+            filtered.sort(key=lambda x: x.due_date or "9999-12-31")  # Handle None values
+        elif sort_by == "description":
+            filtered.sort(key=lambda x: x.description)
+        
         return filtered
 
-    def __str__(self):
-        """Return a string representation of all tasks."""
-        return "\n".join(str(task) for task in self.tasks)
+    def delete_task(self, task_index: int):
+        """
+        Delete a task by its index.
+        
+        Args:
+            task_index (int): Index of the task to delete.
+        """
+        if 0 <= task_index < len(self.tasks):
+            self.tasks.pop(task_index)
+        else:
+            raise IndexError("Task index out of range.")
+
+
+# Example usage
+if __name__ == "__main__":
+    manager = TaskManager()
+    
+    manager.add_task("Finish project report", priority=1, due_date="2023-10-25")
+    manager.add_task("Submit time sheet", priority=2, due_date="2023-10-26")
+    manager.add_task("Schedule meeting", priority=3, due_date="2023-10-27")
+    
+    print("All Tasks:")
+    for task in manager.list_tasks():
+        print(task)
+    
+    print("\nIncomplete Tasks (sorted by priority):")
+    for task in manager.list_tasks(completed=False, sort_by="priority"):
+        print(task)
+    
+    print("\nCompleted Tasks:")
+    for task in manager.list_tasks(completed=True):
+        print(task)
+    
+    manager.complete_task(0)
+    print("\nAfter completing first task:")
+    for task in manager.list_tasks(completed=False):
+        print(task)
 ```
 
----
+## Key Features:
+- **Task Class**: Represents individual tasks with description, priority, completion status, and optional due date
+- **TaskManager Class**: Provides:
+  - Task creation with validation
+  - Completion marking
+  - Filtering by completion status
+  - Sorting by priority, due date, or description
+  - Task deletion
+- **Flexible Interface**: Supports various sorting options and filtering
+- **Error Handling**: Includes validation for priority levels and index ranges
 
-### 🧩 Example Usage
-
+## Example Usage:
 ```python
 from task_manager import TaskManager
 
-# Create a task manager
-tm = TaskManager()
+manager = TaskManager()
+manager.add_task("Buy groceries", priority=2)
+manager.add_task("Finish presentation", priority=1, due_date="2023-10-30")
 
-# Add tasks
-tm.add_task("Buy groceries", 2)
-tm.add_task("Walk the dog", 1)
-tm.add_task("Finish project", 3)
+# List all tasks
+for task in manager.list_tasks():
+    print(task)
 
-# Print all tasks
-print("All Tasks:")
-print(tm)
+# Complete a task
+manager.complete_task(0)
 
-# Mark a task as complete
-tm.update_task(0, completed=True)
-
-# Get and print only completed tasks
-print("\nCompleted Tasks:")
-print(tm.get_tasks(completed=True))
-
-# Remove a task by index
-tm.remove_task(1)
-
-# Print the updated list
-print("\nAfter Removal:")
-print(tm)
+# List incomplete tasks sorted by due date
+for task in manager.list_tasks(completed=False, sort_by="due_date"):
+    print(task)
 ```
 
----
-
-This module provides a clean, object-oriented way to manage a collection of tasks with support for prioritization, completion status tracking, and filtering. It’s easy to extend or integrate into larger applications.
+This module provides a solid foundation that can be extended with additional features like task persistence, notifications, or GUI integration.

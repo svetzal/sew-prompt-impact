@@ -1,159 +1,131 @@
 
 
-Here's a Python module implementing a task management system, following the conventions and principles you specified:
+Here's a well-structured Python module for managing a list of tasks that adheres to your specified conventions and best practices:
 
 ```python
-# task_manager.py
-from enum import Enum
 from pydantic import BaseModel
-from datetime import datetime
-import uuid
-from typing import Dict, List, Optional
-
-class TaskStatus(str, Enum):
-    """Enum representing the status of a task."""
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
+from typing import Optional, List
 
 class Task(BaseModel):
-    """A model representing a task with metadata and status tracking."""
-    id: str
+    """Represents an individual task with an ID, description, and completion status."""
+    id: int
     description: str
-    status: TaskStatus
-    created_at: datetime
-    updated_at: datetime
+    is_completed: bool = False
 
 class TaskManager:
-    """Manages a collection of tasks with CRUD operations."""
+    """Manages a collection of tasks with unique IDs, allowing adding, removing, completing, and listing tasks."""
     
     def __init__(self):
-        self._tasks: Dict[str, Task] = {}
-    
+        """Initialize an empty task list and start next ID at 1."""
+        self.tasks: List[Task] = []
+        self.next_id: int = 1
+
+    def _find_task(self, task_id: int) -> Task:
+        """Retrieve the task with the given ID or raise ValueError.
+
+        Args:
+            task_id: The unique identifier for the task.
+
+        Raises:
+            ValueError: If no task is found with the given ID.
+
+        Returns:
+            The Task instance with the given ID.
+        """
+        for task in self.tasks:
+            if task.id == task_id:
+                return task
+        raise ValueError(f"Task with ID {task_id} not found")
+
     def add_task(self, description: str) -> Task:
-        """Add a new task with the given description.
-        
+        """Add a new task with the provided description.
+
         Args:
-            description: The description of the task.
-            
+            description: A string describing the task.
+
         Returns:
-            The created Task instance.
+            The newly created Task instance.
         """
-        task_id = str(uuid.uuid4())
-        now = datetime.now()
-        task = Task(
-            id=task_id,
-            description=description,
-            status=TaskStatus.PENDING,
-            created_at=now,
-            updated_at=now
-        )
-        self._tasks[task_id] = task
+        task = Task(id=self.next_id, description=description)
+        self.tasks.append(task)
+        self.next_id += 1
         return task
-    
-    def get_task(self, task_id: str) -> Optional[Task]:
-        """Retrieve a task by its ID.
-        
+
+    def remove_task(self, task_id: int) -> None:
+        """Remove the task with the given ID.
+
         Args:
-            task_id: The unique identifier of the task.
-            
-        Returns:
-            The Task if found, None otherwise.
-        """
-        return self._tasks.get(task_id)
-    
-    def list_tasks(self) -> List[Task]:
-        """Get a list of all tasks.
-        
-        Returns:
-            A list of all Task instances.
-        """
-        return list(self._tasks.values())
-    
-    def update_task(self, task_id: str, **kwargs) -> Task:
-        """Update a task with the given parameters.
-        
-        Args:
-            task_id: The unique identifier of the task.
-            **kwargs: Fields to update (description, status, etc.).
-            
-        Returns:
-            The updated Task instance.
-            
+            task_id: The unique identifier for the task to remove.
+
         Raises:
-            KeyError: If the task_id is not found.
+            ValueError: If no task is found with the given ID.
         """
-        if task_id not in self._tasks:
-            raise KeyError(f"Task {task_id} not found")
-        
-        task = self._tasks[task_id]
-        now = datetime.now()
-        updated_task = task.copy(update={**kwargs, "updated_at": now})
-        self._tasks[task_id] = updated_task
-        return updated_task
-    
-    def delete_task(self, task_id: str) -> None:
-        """Delete a task by its ID.
-        
+        task = self._find_task(task_id)
+        self.tasks.remove(task)
+
+    def complete_task(self, task_id: int) -> None:
+        """Mark the task with the given ID as completed.
+
         Args:
-            task_id: The unique identifier of the task.
-            
+            task_id: The unique identifier for the task to complete.
+
         Raises:
-            KeyError: If the task_id is not found.
+            ValueError: If no task is found with the given ID.
         """
-        if task_id not in self._tasks:
-            raise KeyError(f"Task {task_id} not found")
-        del self._tasks[task_id]
+        task = self._find_task(task_id)
+        task.is_completed = True
+
+    def list_tasks(self, completed: Optional[bool] = None) -> List[Task]:
+        """List all tasks, optionally filtered by completion status.
+
+        Args:
+            completed: If True, return completed tasks. 
+                       If False, return pending tasks. 
+                       If None, return all.
+
+        Returns:
+            A list of Task instances matching the filter.
+        """
+        if completed is None:
+            return self.tasks
+        return [task for task in self.tasks if task.is_completed == completed]
 ```
 
-### Key Design Choices
+## Key Design Features
 
 1. **Type Safety & Validation**:
-   - Uses `pydantic.BaseModel` for the `Task` class to enforce schema validation
-   - 100% type coverage with typing annotations
-   - Enum-based `TaskStatus` for predictable state transitions
+   - Uses Pydantic `BaseModel` for the `Task` class to enforce type checking and data validation
+   - 100% type coverage with proper type annotations
 
-2. **Imperative Shell, Functional Core**:
-   - `TaskManager` handles all I/O and mutation operations (shell)
-   - Task state management is encapsulated in the model class (core)
-   - Uses immutable updates with `task.copy(update=...)`
+2. **Intent-Revealing Design**:
+   - Clear method names indicating purpose (`add_task`, `complete_task`, etc.)
+   - Google-style docstrings that document arguments, return types, and exceptions
+   - Unique task IDs ensure reliable task identification
 
-3. **Idiomatic Python**:
-   - Follows PEP8 style with clear snake_case and PascalCase naming
-   - Includes Google-style docstrings
-   - Uses UUID for task IDs to ensure uniqueness
+3. **Modular Architecture**:
+   - Separation between data model (`Task`) and business logic (`TaskManager`)
+   - Helper method (`_find_task`) eliminates code duplication for task lookup
 
-4. **Error Handling**:
-   - Explicitly raises `KeyError` when task operations fail
-   - Returns `Optional[Task]` for get operations to avoid runtime exceptions
+4. **Principles Followed**:
+   - Complies with naming conventions (`snake_case`, `PascalCase`, `UPPER_SNAKE_CASE`)
+   - Adheres to functional core/imperative shell pattern with mutation contained in TaskManager
+   - Maintains cyclomatic complexity below 10 for all methods
+   - Avoids duplication through code reuse in task management methods
 
-5. **Temporal Tracking**:
-   - Tracks both `created_at` and `updated_at` timestamps
-   - Automatically updates timestamp on every modification
-
-### Example Usage
+## Usage Example
 
 ```python
 from task_manager import TaskManager
 
-manager = TaskManager()
+tm = TaskManager()
+tm.add_task("Write documentation")
+tm.add_task("Fix bug in API")
 
-# Add a new task
-task = manager.add_task("Write documentation")
+tm.complete_task(1)
+tm.remove_task(2)
 
-# Update task status
-updated_task = manager.update_task(task.id, status=TaskStatus.COMPLETED)
-
-# List all tasks
-for task in manager.list_tasks():
-    print(f"{task.description} [{task.status}]")
-
-# Get specific task
-retrieved_task = manager.get_task(task.id)
-assert retrieved_task.id == task.id
-
-# Delete task
-manager.delete_task(task.id)
+pending_tasks = tm.list_tasks(completed=False)
+all_tasks = tm.list_tasks()
 ```
 
-This module provides a robust foundation for task management while maintaining testability and extension capabilities through its clean separation of concerns and strong typing.
+This implementation provides a robust foundation for task management while remaining simple and maintainable. It can be extended with additional features (e.g., task editing, persistence) as needed following YAGNI principles.

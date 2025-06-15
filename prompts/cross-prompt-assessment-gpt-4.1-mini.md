@@ -1,21 +1,37 @@
-| Prompt Style | Code Complexity | Use of Type Hints | Data Validation | Design Approach                     | Notable Strengths                         | Potential Weaknesses                      |
-|-------------:|:---------------:|:-----------------:|:---------------:|:-------------------------------------|:------------------------------------------|:------------------------------------------|
-| **fancy**    | Higher          | Extensive (mypy‑compatible) | Yes (pydantic)    | More advanced (classes, composition) | Clean structure, explicit validation      | Additional overhead, dependencies         |
-| **plain**    | Lower           | Minimal/None      | No              | Simple object‑oriented approach      | Straightforward, easy to read & maintain | No built‑in validation, fewer guarantees |
+| **Prompt Style** | **Approach**                                 | **Key Features**                                                                                                                                                    | **Strengths**                                                                                                                                                                | **Weaknesses**                                                                                                                                                                    |
+|------------------|----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Fancy**        | Object‑oriented with Pydantic                | • Uses pydantic BaseModel for task validation<br>• Comprehensive type hints<br>• Structured docstrings<br>• Offers filtering by status, addition, removal, updating | • Strong type enforcement & validation <br>• Easy to integrate with frameworks that support Pydantic<br>• Rich docstrings aiding clarity and maintenance                     | • Slightly heavier dependency (pydantic)<br>• More verbose code                                                                                                                     |
+| **Plain**        | Object‑oriented without external libraries   | • Simpler Task class with minimal type hints<br>• Manages tasks within a TaskManager<br>• Demonstrates optional usage example                                       | • Straightforward, minimal dependencies<br>• Clear example usage in if __name__ == "__main__"                                          | • Less advanced type checking or validation<br>• Slightly more manual approach to data consistency                                                                                 |
+| **Partial**      | Functional core (dictionary-based tasks)     | • Purely functional approach<br>• Tasks stored as dictionaries<br>• Each function returns a new list instead of mutating in-place                                    | • High clarity in functional design (no side effects)<br>• Minimal entity approach suits small code bases                              | • No built-in usage demo<br>• Functional approach might be less natural for those expecting classes<br>• Limited validation on the structure of task dictionaries                   |
 
 ---
 
-## Extended Qualitative Analysis
+## Qualitative Analysis
 
-1. **Which prompt style gives the best results overall?**  
-   The "fancy" style provides a more robust code base, including Pydantic validation, complete type annotations, and adherence to advanced design principles. If you need correctness guarantees, clearer error handling, and strong type safety, the “fancy” prompt’s output excels. However, the “plain” style might be simpler to adopt for quick prototypes or smaller scripts.
+1. Which prompt style gives the best results overall?
 
-2. **What aspects of the model’s response differ between the different prompt styles?**  
-   - **Type Handling**: The “fancy” output uses type hints extensively and leverages Pydantic’s validation, while the “plain” output provides no explicit type hints and relies on Python’s dynamic nature.  
-   - **Design Complexity**: The “fancy” version separates the Task and TaskManager logic more rigorously, showcasing advanced patterns like copying immutable data in place. In contrast, the “plain” code modifies objects in place with straightforward OOP.  
-   - **Error Handling & Validation**: The “fancy” solution proactively handles validation (e.g., min_length in the `description` Field) and raises typed exceptions. The “plain” version does simpler index checks and lacks built-in data validation.
+   • The “Fancy” style arguably yields the most robust and maintainable design due to Pydantic’s validation and comprehensive type hints. It facilitates clarity, enforceable constraints (for example, required fields, ID must be ≥ 1), and easy future extension.  
+   • However, “best” may vary based on context. If you need minimal dependencies or a purely functional style, “Partial” or “Plain” might be preferable.
 
-3. **What aspects of the model’s response are consistent across all prompt styles?**  
-   - **Core Functionality**: Both solutions provide task creation, listing, marking completion, and deletion.  
-   - **Class-based Approach**: They both have a `Task` entity and a manager or aggregator class to handle tasks.  
-   - **Readability**: Despite different levels of sophistication, both retain overall clarity and logically structured methods for task operations.
+2. What aspects of the model's response differ between the different prompt styles?
+
+   • Data Model:  
+     – “Fancy” uses Pydantic’s BaseModel.  
+     – “Plain” defines a custom Task class manually.  
+     – “Partial” uses dictionary-based task representations with pure functions.  
+   • Validation & Type Hints:  
+     – “Fancy” includes strict type checks using Pydantic and thorough type annotations.  
+     – “Plain” offers some basic typing via the standard library’s typing imports but relies on a custom Task class with fewer constraints.  
+     – “Partial” has typed function signatures but uses unvalidated dictionaries.  
+   • Code Structure:  
+     – “Fancy” and “Plain” are object-oriented, while “Partial” is purely functional.  
+   • Docstrings & Documentation:  
+     – “Fancy” uses relatively verbose docstrings (Google style) and thorough descriptions.  
+     – “Plain” includes docstrings, but less formal and with fewer details compared to “Fancy.”  
+     – “Partial” also uses docstrings but is very function-focused rather than class-based.  
+
+3. What aspects of the model's response are consistent across all prompt styles?
+
+   • Fundamental Task Management Operations: All three solutions provide ways to add, remove, list, and update tasks, meeting the core requirement.  
+   • Adequate Use of Python Standard Library: Each solution uses typing imports (List, Optional, etc.) and straightforward Python patterns to manipulate tasks.  
+   • Readability & Clarity: Despite different implementations, each style is relatively readable and follows the goal of “code as communication,” delivering well-documented, maintainable task management functionality.

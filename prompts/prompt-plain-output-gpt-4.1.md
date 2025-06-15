@@ -1,19 +1,24 @@
-Here’s a Python module named `task_manager.py` that allows you to manage a list of tasks. Tasks can be added, removed, marked as completed, and you can list all tasks or pending tasks. It uses a simple in-memory list. If you want, the module can be extended for saving to files or other persistence.
+Certainly! Below is a simple Python module named `task_manager.py` that allows you to manage a list of tasks. Each task can have a description and a completion status.
 
-**task_manager.py**:
+**Features:**
+- Add tasks
+- List tasks
+- Mark tasks as done
+- Remove tasks
+
+---
 
 ```python
+# task_manager.py
+
 class Task:
     def __init__(self, description):
         self.description = description
         self.completed = False
 
-    def mark_completed(self):
-        self.completed = True
-
     def __repr__(self):
-        status = "✓" if self.completed else "✗"
-        return f"[{status}] {self.description}"
+        status = "[✓]" if self.completed else "[ ]"
+        return f"{status} {self.description}"
 
 
 class TaskManager:
@@ -21,67 +26,57 @@ class TaskManager:
         self.tasks = []
 
     def add_task(self, description):
-        """Add a new task by description."""
-        task = Task(description)
-        self.tasks.append(task)
-        return task
+        self.tasks.append(Task(description))
 
-    def remove_task(self, index):
-        """Remove task by its index."""
-        if 0 <= index < len(self.tasks):
-            removed = self.tasks.pop(index)
-            return removed
-        raise IndexError("No task at the specified index.")
+    def list_tasks(self, show_all=True):
+        if show_all:
+            return list(enumerate(self.tasks, start=1))
+        else:
+            return [(i + 1, t) for i, t in enumerate(self.tasks) if not t.completed]
 
     def complete_task(self, index):
-        """Mark a task as complete by index."""
         if 0 <= index < len(self.tasks):
-            self.tasks[index].mark_completed()
-            return self.tasks[index]
-        raise IndexError("No task at the specified index.")
+            self.tasks[index].completed = True
+            return True
+        return False
 
-    def list_tasks(self, show_completed=True):
-        """Return all tasks. If show_completed is False, only incomplete tasks are returned."""
-        if show_completed:
-            return list(enumerate(self.tasks))
-        else:
-            return [(i, task) for i, task in enumerate(self.tasks) if not task.completed]
-
-    def __repr__(self):
-        lines = []
-        for idx, task in enumerate(self.tasks):
-            lines.append(f"{idx}. {task}")
-        return "\n".join(lines) if lines else "No tasks."
-
-
-# Example usage
-if __name__ == "__main__":
-    tm = TaskManager()
-    tm.add_task("Buy groceries")
-    tm.add_task("Write report")
-    tm.complete_task(0)
-    print("All tasks:")
-    print(tm)
-    print("\nIncomplete tasks:")
-    for idx, task in tm.list_tasks(show_completed=False):
-        print(f"{idx}. {task}")
+    def remove_task(self, index):
+        if 0 <= index < len(self.tasks):
+            del self.tasks[index]
+            return True
+        return False
 ```
 
 ---
 
-**How to use:**
-
-1. **Save as `task_manager.py`**
-2. **Import and use in your other scripts:**
+**Example Usage:**
 
 ```python
-from task_manager import TaskManager
+if __name__ == "__main__":
+    tm = TaskManager()
+    tm.add_task("Buy groceries")
+    tm.add_task("Read a book")
+    tm.add_task("Exercise")
 
-tm = TaskManager()
-tm.add_task("Do homework")
-tm.add_task("Clean room")
-tm.complete_task(1)
-print(tm)
+    print("All tasks:")
+    for i, task in tm.list_tasks():
+        print(f"{i}. {task}")
+
+    print("\nMarking task 2 as complete.\n")
+    tm.complete_task(1)
+
+    print("Incomplete tasks:")
+    for i, task in tm.list_tasks(show_all=False):
+        print(f"{i}. {task}")
+
+    print("\nRemoving task 1.\n")
+    tm.remove_task(0)
+
+    print("All tasks:")
+    for i, task in tm.list_tasks():
+        print(f"{i}. {task}")
 ```
 
-Let me know if you want file saving/loading support or other features!
+---
+
+Let me know if you need enhancements, like file saving/loading, due dates, priorities, or a command-line interface!

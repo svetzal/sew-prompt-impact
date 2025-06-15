@@ -4,60 +4,77 @@ from pydantic import BaseModel, Field
 
 
 class Task(BaseModel):
-    """A task with a description and completion status."""
+    """Represents a single task item."""
 
-    description: str = Field(..., min_length=1)
-    completed: bool = False
+    id: int = Field(..., ge=1, description="Unique identifier for the task")
+    title: str = Field(..., min_length=1, description="Title of the task")
+    completed: bool = Field(False, description="Completion status")
 
 
 class TaskManager:
-    """Manage a list of tasks."""
+    """Manages a list of tasks with add, remove, update, and query operations."""
 
     def __init__(self) -> None:
         self._tasks: List[Task] = []
-
-    def add_task(self, description: str) -> None:
-        """Add a new task with the given description.
-
-        Args:
-            description: The task description, must be non-empty.
-        """
-        self._tasks.append(Task(description=description))
-
-    def complete_task(self, index: int) -> None:
-        """Mark the task at index as completed.
-
-        Args:
-            index: Index of the task to mark complete.
-
-        Raises:
-            IndexError: If the index is out of bounds.
-        """
-        task = self._tasks[index]
-        self._tasks[index] = task.copy(update={"completed": True})
-
-    def delete_task(self, index: int) -> None:
-        """Delete the task at index.
-
-        Args:
-            index: Index of the task to delete.
-
-        Raises:
-            IndexError: If the index is out of bounds.
-        """
-        del self._tasks[index]
+        self._next_id: int = 1
 
     def list_tasks(self, *, completed: bool | None = None) -> List[Task]:
-        """List tasks, optionally filtering by completion status.
+        """Return all tasks optionally filtered by completion status.
 
         Args:
-            completed: If True, only return completed tasks; if False,
-                only incomplete tasks; if None, return all tasks.
+            completed: If specified, filter tasks by completion status.
 
         Returns:
-            List of tasks matching filter.
+            List of tasks matching the filter.
         """
         if completed is None:
-            return list(self._tasks)
-        return [t for t in self._tasks if t.completed == completed]
+            return self._tasks.copy()
+        return [task for task in self._tasks if task.completed is completed]
+
+    def add_task(self, title: str) -> Task:
+        """Create a new task with the given title, uncompleted by default.
+
+        Args:
+            title: Title of the task.
+
+        Returns:
+            The created Task.
+        """
+        task = Task(id=self._next_id, title=title)
+        self._tasks.append(task)
+        self._next_id += 1
+        return task
+
+    def remove_task(self, task_id: int) -> bool:
+        """Remove a task by its id.
+
+        Args:
+            task_id: Identifier of the task to remove.
+
+        Returns:
+            True if the task was found and removed, otherwise False.
+        """
+        for i, task in enumerate(self._tasks):
+            if task.id == task_id:
+                del self._tasks[i]
+                return True
+        return False
+
+    def update_task(self, task_id: int, *, title: str | None = None, completed: bool | None = None) -> bool:
+        """Update fields of a task by id.
+
+        Args:
+            task_id: Identifier of the task to update.
+            title: New title, if updating.
+            completed: New completion status, if updating.
+
+        Returns:
+            True if the task was found and updated, otherwise False.
+        """
+        for i, task in enumerate(self._tasks):
+            if task.id == task_id:
+                updated = task.copy(update={k: v for k, v in (("title", title), ("completed", completed)) if v is not None})
+                self._tasks[i] = updated
+                return True
+        return False
 ```

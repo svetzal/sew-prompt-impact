@@ -1,154 +1,169 @@
-Here’s a simple self-contained Python module, `tasks.py`, that lets you create, list, update, delete and persist a to-do list. It uses a `TaskManager` class and keeps tasks in JSON on disk.
+Below is a simple self-contained Python module (`tasks.py`) that lets you create and manage an in-memory list of tasks, with optional persistence to JSON. You can import `TaskManager` in your own scripts or extend it as needed.
 
 ```python
 # tasks.py
-
+from __future__ import annotations
 import json
-import os
-from typing import List, Optional
-from dataclasses import dataclass, asdict
+import uuid
+from dataclasses import dataclass, field, asdict
+from datetime import datetime, date
+from typing import List, Optional, Dict
+
 
 @dataclass
 class Task:
-    id: int
-    description: str
-    done: bool = False
+    """
+    A simple Task record.
+    """
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    title: str = field(default="")
+    description: str = field(default="")
+    due_date: Optional[date] = field(default=None)
+    created_at: datetime = field(default_factory=datetime.now)
+    completed: bool = field(default=False)
+
+    def to_dict(self) -> Dict:
+        """
+        Convert to JSON-serializable dict.
+        """
+        d = asdict(self)
+        # serialize dates/times to isoformat
+        d["created_at"] = self.created_at.isoformat()
+        d["due_date"] = self.due_date.isoformat() if self.due_date else None
+        return d
+
+    @staticmethod
+    def from_dict(d: Dict) -> Task:
+        """
+        Reconstruct a Task from dict (as produced by to_dict).
+        """
+        td = date.fromisoformat(d["due_date"]) if d.get("due_date") else None
+        ca = datetime.fromisoformat(d["created_at"])
+        return Task(
+            id=d["id"],
+            title=d["title"],
+            description=d.get("description", ""),
+            due_date=td,
+            created_at=ca,
+            completed=d.get("completed", False),
+        )
+
 
 class TaskManager:
-    def __init__(self, storage_path: str = "tasks.json"):
-        self.storage_path = storage_path
-        self.tasks: List[Task] = []
-        self._next_id = 1
-        self.load()
+    """
+    In-memory manager for a list of Task objects.
+    """
 
-    def add_task(self, description: str) -> Task:
-        """Add a new task."""
-        task = Task(id=self._next_id, description=description, done=False)
-        self.tasks.append(task)
-        self._next_id += 1
-        self.save()
+    def __init__(self) -> None:
+        self._tasks: List[Task] = []
+
+    def add_task(
+        self,
+        title: str,
+        description: str = "",
+        due_date: Optional[date] = None,
+    ) -> Task:
+        """
+        Create a new task and add it to the list.
+        """
+        task = Task(title=title, description=description, due_date=due_date)
+        self._tasks.append(task)
         return task
 
-    def get_task(self, task_id: int) -> Optional[Task]:
-        """Return the task with given id, or None."""
-        return next((t for t in self.tasks if t.id == task_id), None)
+    def get_task(self, task_id: str) -> Optional[Task]:
+        """
+        Return the Task with the given id, or None if not found.
+        """
+        for t in self._tasks:
+            if t.id == task_id:
+                return t
+        return None
 
-    def list_tasks(self, show_done: bool = True) -> List[Task]:
-        """Return all tasks; if show_done=False, only pending tasks."""
-        if show_done:
-            return list(self.tasks)
-        return [t for t in self.tasks if not t.done]
+    def list_tasks(self, *, show_completed: Optional[bool] = None) -> List[Task]:
+        """
+        Return all tasks, or filter by completion status.
+        - show_completed=True  → only completed tasks
+        - show_completed=False → only uncompleted tasks
+        - show_completed=None  → all tasks
+        """
+        if show_completed is None:
+            return list(self._tasks)
+        return [t for t in self._tasks if t.completed is show_completed]
 
-    def mark_done(self, task_id: int) -> bool:
-        """Mark the specified task as done. Returns True if successful."""
-        t = self.get_task(task_id)
-        if not t:
-            return False
-        t.done = True
-        self.save()
-        return True
+    def remove_task(self, task_id: str) -> bool:
+        """
+        Remove a task by id. Returns True if removed, False if not found.
+        """
+        task = self.get_task(task_id)
+        if task:
+            self._tasks.remove(task)
+            return True
+        return False
 
-    def delete_task(self, task_id: int) -> bool:
-        """Delete the specified task. Returns True if successful."""
-        t = self.get_task(task_id)
-        if not t:
-            return False
-        self.tasks.remove(t)
-        self.save()
-        return True
+    def mark_completed(self, task_id: str) -> bool:
+        """
+        Mark the given task as completed. Returns True on success.
+        """
+        task = self.get_task(task_id)
+        if task and not task.completed:
+            task.completed = True
+            return True
+        return False
 
-    def save(self) -> None:
-        """Persist the task list and next id to disk."""
-        data = {
-            "next_id": self._next_id,
-            "tasks": [asdict(t) for t in self.tasks]
-        }
-        with open(self.storage_path, "w", encoding="utf-8") as f:
+    def mark_uncompleted(self, task_id: str) -> bool:
+        """
+        Mark the given task as uncompleted. Returns True on success.
+        """
+        task = self.get_task(task_id)
+        if task and task.completed:
+            task.completed = False
+            return True
+        return False
+
+    def save_to_file(self, file_path: str) -> None:
+        """
+        Save all tasks to a JSON file.
+        """
+        with open(file_path, "w", encoding="utf-8") as f:
+            data = [t.to_dict() for t in self._tasks]
             json.dump(data, f, indent=2)
 
-    def load(self) -> None:
-        """Load tasks (and next_id) from disk, if file exists."""
-        if not os.path.exists(self.storage_path):
-            return
-        try:
-            with open(self.storage_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            self._next_id = data.get("next_id", 1)
-            self.tasks = [Task(**t) for t in data.get("tasks", [])]
-        except (IOError, ValueError):
-            # If file is corrupted, start fresh
-            self.tasks = []
-            self._next_id = 1
-
-if __name__ == "__main__":
-    # Simple CLI demo
-    import argparse
-    parser = argparse.ArgumentParser(description="Simple Task Manager")
-    parser.add_argument("--add", "-a", help="Add a new task", metavar="DESC")
-    parser.add_argument("--list", "-l", action="store_true", help="List tasks")
-    parser.add_argument("--done", "-d", type=int, help="Mark task as done by ID")
-    parser.add_argument("--delete", "-r", type=int, help="Remove task by ID")
-    args = parser.parse_args()
-
-    mgr = TaskManager()
-
-    if args.add:
-        task = mgr.add_task(args.add)
-        print(f"Added task {task.id}: {task.description}")
-
-    elif args.done is not None:
-        if mgr.mark_done(args.done):
-            print(f"Marked task {args.done} as done.")
-        else:
-            print(f"No task with ID {args.done} found.")
-
-    elif args.delete is not None:
-        if mgr.delete_task(args.delete):
-            print(f"Deleted task {args.delete}.")
-        else:
-            print(f"No task with ID {args.delete} found.")
-
-    elif args.list:
-        tasks = mgr.list_tasks(show_done=True)
-        if not tasks:
-            print("No tasks.")
-        else:
-            for t in tasks:
-                status = "[x]" if t.done else "[ ]"
-                print(f"{t.id:3} {status} {t.description}")
-
-    else:
-        parser.print_help()
+    def load_from_file(self, file_path: str) -> None:
+        """
+        Load tasks from a JSON file, replacing any in-memory tasks.
+        """
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self._tasks = [Task.from_dict(item) for item in data]
 ```
 
-Usage example (interactive Python):
+Usage example:
 
 ```python
+# example_usage.py
+from datetime import date
 from tasks import TaskManager
-mgr = TaskManager("mytasks.json")
 
-# Add tasks
-mgr.add_task("Buy milk")
-mgr.add_task("Write report")
+tm = TaskManager()
 
-# Mark task 1 done
-mgr.mark_done(1)
+# add some tasks
+t1 = tm.add_task("Buy groceries", "Milk, eggs, bread", due_date=date(2024, 7, 1))
+t2 = tm.add_task("Finish report", "Annual finance report")
 
-# List pending only
-for t in mgr.list_tasks(show_done=False):
-    print(t)
+# list all
+for t in tm.list_tasks():
+    print(f"{t.id[:8]} | {t.title:20} | done={t.completed}")
 
-# Delete a task
-mgr.delete_task(2)
+# mark one completed
+tm.mark_completed(t1.id)
+
+# save to disk
+tm.save_to_file("my_tasks.json")
+
+# later or in another script
+tm2 = TaskManager()
+tm2.load_from_file("my_tasks.json")
+print("Loaded tasks:", tm2.list_tasks())
 ```
 
-Or shell-style:
-
-```
-$ python tasks.py --add "Clean house"
-$ python tasks.py --list
-  1 [ ] Clean house
-$ python tasks.py --done 1
-$ python tasks.py --list
-  1 [x] Clean house
-```
+Feel free to extend it with CLI hooks, database backends, priority levels, etc.

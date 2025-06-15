@@ -1,31 +1,33 @@
-| Prompt Style | Code Complexity | Documentation/Comments | Data Validation | Output Formatting | Primary Strength | Potential Weakness |
-|--------------|-----------------|-------------------------|-----------------|-------------------|------------------|--------------------|
-| Fancy        | High            | Detailed docstrings & guidelines | Uses pydantic for data validation | Follows strict style/formatting rules (flake8, black) | Very thorough instructions and well-structured code | May be verbose or overengineered for the simplest use cases |
-| Plain        | Low             | Brief docstrings & simpler approach | Uses simple dictionary-based tasks, no pydantic | Minimal code layout, single Python class | Quick to understand and maintain | Lacks advanced features such as type checking and data validation |
+| Prompt Style | Core Approach                              | Implementation Complexity | Validation / Type Safety            | Key Libraries       | Strengths                                                                                                                       | Weaknesses                                                                                                                      |
+|-------------|--------------------------------------------|---------------------------|-------------------------------------|---------------------|----------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| fancy       | Pydantic-based Task model with timestamps  | Moderate                 | Strong (pydantic & mypy)            | datetime, pydantic | Provides robust data model, built-in validation, uses auto-generated timestamps, thorough docstrings and typed class fields.    | Requires extra library (pydantic), slightly more verbose, may be overkill for simpler use cases.                                |
+| plain       | Simple Python class with dict-based tasks  | Very simple              | Minimal (no type hints for tasks)   | None (core Python)  | Lightweight, easy to read, minimal external dependencies, straightforward usage to manage tasks in a list.                      | Less type safety, no validation mechanism, uses print statements for listing tasks, not as flexible for expansions or testing.  |
+| partial     | Python classes with an Enum for status     | Simple/Moderate          | Moderate (custom classes, no pydantic) | None (core Python)  | Clean separation of concerns (Task vs. TaskManager), flexible status management using enums, straightforward for expansions/test. | No built-in validation like pydantic, tasks identified only by references (no IDs), potential for growth but needs more scaffolding. |
 
 ---
 
-## Qualitative Analysis
+### Qualitative Analysis
 
 1. Which prompt style gives the best results overall?
-
-   The "fancy" prompt style yields a codebase with more advanced features (e.g., use of pydantic, type hints, docstrings in Google format, and a thorough set of CRUD operations on tasks). It is more robust, follows strict linting conventions, includes type validation, and adheres to best practices such as immutability and unit testing readiness. This makes it more suitable for larger-scale production work where maintainability, correctness, and code clarity are paramount.
-
-   On the other hand, the "plain" prompt style provides a lightweight and straightforward approach. It is easy to read and more than adequate for smaller projects or quick scripts. However, it lacks type hints and data validation, meaning it is slightly less robust in terms of error checking and maintainability in the long term.
-
-   Overall, if you value production-ready code and in-depth documentation, "fancy" is superior. If you just want simple, minimal functionality in a hurry, "plain" is sufficient.
+   • The "fancy" style tends to produce a more sophisticated and production-ready module. It includes structured validation (via pydantic), comprehensive type hints, and docstrings in a consistent format. This makes it well-suited for projects that demand strong correctness, clarity, and scalability.  
+   • However, if simplicity and a minimal dependency footprint are priorities, the "plain" style code may be easier to integrate. The "partial" style sits between these two extremes, providing a reasonable balance of clarity, typed usage of enums, and straightforward structure, while stopping short of pydantic-level validation.
 
 2. What aspects of the model's response differ between the different prompt styles?
-
-   • The "fancy" output employs a class-based design with strict types, docstring formatting guidelines, thorough validations, and best practices such as immutability in the `update_task` method.  
-   • The "plain" output uses a single class with a minimal approach (dictionary-based tasks with no special data validation or error handling beyond index range checks).  
-   • The "fancy" style invests more lines of code to implement and document tasks comprehensively, while the "plain" style remains concise and removes many advanced elements like pydantic and custom exceptions.
+   • Use of External Libraries & Validation:  
+     – "fancy": Depends on pydantic, leverages advanced tooling like mypy validation.  
+     – "plain": Uses no external libraries.  
+     – "partial": No external libraries, but includes an Enum for statuses.  
+   • Code Complexity & Readability:  
+     – "fancy": More detailed structure (e.g., typed fields, creation timestamps, docstrings).  
+     – "plain": Very minimal, easier for quick scripts.  
+     – "partial": Splits responsibilities but no built-in validation, a middle ground.  
+   • Handling of IDs, Timestamps, & Status:  
+     – "fancy": Has an ID and a timestamp automatically assigned, uses a boolean for completion.  
+     – "plain": No explicit ID, tasks are tracked by list position.  
+     – "partial": No IDs or timestamps, uses an enum for status instead of a boolean.  
 
 3. What aspects of the model's response are consistent across all prompt styles?
-
-   • Both outputs define a class responsible for tracking tasks.  
-   • Each approach allows adding, deleting, and marking tasks as completed.  
-   • Both solutions show how to initialize a manager instance and handle tasks using similar method names.  
-   • The general intent—managing tasks—remains the same, focusing on storing a to-do list, updating status, and admin tasks (e.g., deletion and listing).  
-
-In conclusion, while both the "fancy" and "plain" styles share the same overarching goal—managing tasks—they vary in complexity, best practice implementation, and overall thoroughness.
+   • All three outputs present a coherent solution for creating, updating, and listing tasks.  
+   • Each code snippet follows standard Pythonic conventions in naming, indentation, and basic documentation.  
+   • Task creation and completion are core functionalities in every style, and each approach allows retrieving or listing tasks in some form.  
+   • Despite differing in complexity, all solutions reflect some application of “simple design heuristics,” ensuring code clarity and maintainability within each style’s scope.
