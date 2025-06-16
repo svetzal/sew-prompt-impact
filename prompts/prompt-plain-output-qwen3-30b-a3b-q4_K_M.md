@@ -1,153 +1,135 @@
+Here is a well-documented Python module designed to manage a list of tasks, including features such as adding, completing, deleting, listing, and persisting tasks to a JSON file.
 
+---
+
+### ✅ Module: `task_manager.py`
 
 ```python
-class Task:
-    """
-    Represents a single task with a description, priority, and completion status.
-    
-    Attributes:
-        description (str): A brief description of the task.
-        priority (int): Priority level (lower numbers mean higher priority).
-        completed (bool): Whether the task has been completed.
-    """
-
-    def __init__(self, description, priority=1, completed=False):
-        self.description = description
-        self.priority = priority
-        self.completed = completed
-
-    def mark_complete(self):
-        """Mark the task as completed."""
-        self.completed = True
-
-    def mark_incomplete(self):
-        """Mark the task as not completed."""
-        self.completed = False
-
-    def __str__(self):
-        return f"{self.description} (Priority: {self.priority}, Completed: {self.completed})"
-
+import json
 
 class TaskManager:
     """
-    Manages a collection of tasks, allowing for addition, removal, updating, and filtering.
+    A class to manage a list of tasks.
+
+    Attributes:
+        tasks (list): A list of task dictionaries, each with 'description' and 'completed' keys.
     """
 
     def __init__(self):
-        """Initialize an empty list of tasks."""
+        """
+        Initializes an empty list of tasks.
+        """
         self.tasks = []
 
-    def add_task(self, description, priority=1):
+    def add_task(self, description):
         """
-        Add a new task with the given description and priority.
-        
-        Args:
-            description (str): Description of the task.
-            priority (int): Priority level (default is 1).
-        
-        Returns:
-            Task: The newly created task.
-        """
-        task = Task(description, priority)
-        self.tasks.append(task)
-        return task
+        Adds a new task to the list.
 
-    def remove_task(self, index):
-        """
-        Remove a task at the specified index.
-        
         Args:
-            index (int): Index of the task to be removed.
-        
-        Raises:
-            IndexError: If the index is out of range.
+            description (str): A string describing the task.
+        """
+        self.tasks.append({'description': description, 'completed': False})
+
+    def complete_task(self, index):
+        """
+        Marks the task at the specified index as completed.
+
+        Args:
+            index (int): The index of the task to mark as completed.
         """
         if 0 <= index < len(self.tasks):
-            self.tasks.pop(index)
+            self.tasks[index]['completed'] = True
         else:
-            raise IndexError("Task index out of range")
+            print("Invalid index")
 
-    def update_task(self, index, description=None, priority=None, completed=None):
+    def delete_task(self, index):
         """
-        Update an existing task at the specified index.
-        
+        Deletes the task at the specified index.
+
         Args:
-            index (int): Index of the task to be updated.
-            description (str, optional): New description for the task.
-            priority (int, optional): New priority for the task.
-            completed (bool, optional): Update the completion status.
-        
-        Raises:
-            IndexError: If the index is out of range.
+            index (int): The index of the task to delete.
         """
         if 0 <= index < len(self.tasks):
-            task = self.tasks[index]
-            if description is not None:
-                task.description = description
-            if priority is not None:
-                task.priority = priority
-            if completed is not None:
-                task.completed = completed
+            del self.tasks[index]
         else:
-            raise IndexError("Task index out of range")
+            print("Invalid index")
 
-    def get_tasks(self, completed=None, priority=None):
+    def list_tasks(self):
         """
-        Retrieve a filtered list of tasks.
-        
+        Prints all tasks with their current status and indexes.
+        """
+        for i, task in enumerate(self.tasks):
+            status = 'Completed' if task['completed'] else 'Pending'
+            print(f"{i}: {task['description']} - {status}")
+
+    def save_to_file(self, filename):
+        """
+        Saves the current tasks to a JSON file.
+
         Args:
-            completed (bool, optional): Filter tasks by completion status.
-            priority (int, optional): Filter tasks by priority level.
-        
-        Returns:
-            list: A list of tasks matching the criteria.
+            filename (str): The path to the file where tasks will be saved.
         """
-        filtered = self.tasks
-        if completed is not None:
-            filtered = [task for task in filtered if task.completed == completed]
-        if priority is not None:
-            filtered = [task for task in filtered if task.priority == priority]
-        return filtered
+        with open(filename, 'w') as f:
+            json.dump([{'description': t['description'], 'completed': t['completed']} for t in self.tasks], f)
 
-    def __str__(self):
-        """Return a string representation of all tasks."""
-        return "\n".join(str(task) for task in self.tasks)
+    def load_from_file(self, filename):
+        """
+        Loads tasks from a JSON file.
+
+        Args:
+            filename (str): The path to the file from which tasks will be loaded.
+        """
+        try:
+            with open(filename, 'r') as f:
+                data = json.load(f)
+                self.tasks = [{'description': d['description'], 'completed': d['completed']} for d in data]
+        except FileNotFoundError:
+            print("File not found. No tasks loaded.")
+        except json.JSONDecodeError:
+            print("Invalid JSON format. No tasks loaded.")
 ```
 
 ---
 
-### 🧩 Example Usage
+### 📁 Usage Example
+
+You can use the module in your project like this:
 
 ```python
 from task_manager import TaskManager
 
-# Create a task manager
-tm = TaskManager()
+# Create a task manager instance
+task_manager = TaskManager()
 
 # Add tasks
-tm.add_task("Buy groceries", 2)
-tm.add_task("Walk the dog", 1)
-tm.add_task("Finish project", 3)
+task_manager.add_task("Buy groceries")
+task_manager.add_task("Clean room")
 
-# Print all tasks
-print("All Tasks:")
-print(tm)
+# List all tasks
+task_manager.list_tasks()
 
-# Mark a task as complete
-tm.update_task(0, completed=True)
+# Complete a task
+task_manager.complete_task(0)
 
-# Get and print only completed tasks
-print("\nCompleted Tasks:")
-print(tm.get_tasks(completed=True))
+# Delete a task
+task_manager.delete_task(1)
 
-# Remove a task by index
-tm.remove_task(1)
+# Save tasks to a file
+task_manager.save_to_file("tasks.json")
 
-# Print the updated list
-print("\nAfter Removal:")
-print(tm)
+# Load tasks from a file
+task_manager.load_from_file("tasks.json")
+
+# List tasks again
+task_manager.list_tasks()
 ```
 
 ---
 
-This module provides a clean, object-oriented way to manage a collection of tasks with support for prioritization, completion status tracking, and filtering. It’s easy to extend or integrate into larger applications.
+### 📦 Notes
+
+- The module uses the built-in `json` module for file I/O.
+- Error handling is included for invalid indexes and malformed JSON files.
+- The module can be extended with additional features such as task priorities, deadlines, or filters.
+
+This is a complete and flexible tool for task management in Python, suitable for both learning and small-scale applications.

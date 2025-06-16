@@ -1,164 +1,151 @@
 **Task Manager Module**
-========================
+=======================
 
 ### Overview
 
-This Python module provides a simple task management system. It allows users to create, read, update, and delete (CRUD) tasks.
+This Python module provides a simple task manager that allows you to create, read, update, and delete (CRUD) tasks.
 
 ### Installation
 
-To use this module, simply copy the code into a file named `task_manager.py` and import it in your Python script.
+To use this module, save the following code in a file named `task_manager.py`. You can then import it into your Python scripts or programs.
 
 ### Code
 ```python
 # task_manager.py
 
 class Task:
-    def __init__(self, id, title, description, due_date=None):
+    def __init__(self, title, description="", completed=False):
         """
         Initialize a new task.
 
         Args:
-            id (int): Unique task ID.
-            title (str): Task title.
-            description (str): Task description.
-            due_date (str, optional): Task due date. Defaults to None.
+            title (str): The title of the task.
+            description (str, optional): A brief description of the task. Defaults to "".
+            completed (bool, optional): Whether the task is completed. Defaults to False.
         """
-        self.id = id
         self.title = title
         self.description = description
-        self.due_date = due_date
+        self.completed = completed
+
+    def mark_as_completed(self):
+        """
+        Mark the task as completed.
+        """
+        self.completed = True
+
+    def mark_as_incomplete(self):
+        """
+        Mark the task as incomplete.
+        """
+        self.completed = False
+
 
 class TaskManager:
     def __init__(self):
         """
-        Initialize the task manager with an empty list of tasks.
+        Initialize a new task manager with an empty list of tasks.
         """
         self.tasks = []
-        self.next_id = 1
 
-    def create_task(self, title, description, due_date=None):
+    def create_task(self, title, description=""):
         """
         Create a new task and add it to the list.
 
         Args:
-            title (str): Task title.
-            description (str): Task description.
-            due_date (str, optional): Task due date. Defaults to None.
+            title (str): The title of the task.
+            description (str, optional): A brief description of the task. Defaults to "".
+        """
+        new_task = Task(title, description)
+        self.tasks.append(new_task)
+
+    def read_tasks(self):
+        """
+        Return a list of all tasks.
 
         Returns:
-            Task: The newly created task.
+            list: A list of Task objects.
         """
-        task = Task(self.next_id, title, description, due_date)
-        self.tasks.append(task)
-        self.next_id += 1
-        return task
+        return self.tasks
 
-    def get_task(self, id):
+    def update_task(self, index, title=None, description=None):
         """
-        Get a task by its ID.
+        Update an existing task.
 
         Args:
-            id (int): Task ID.
-
-        Returns:
-            Task: The task with the matching ID, or None if not found.
+            index (int): The index of the task to update.
+            title (str, optional): The new title of the task. Defaults to None.
+            description (str, optional): The new description of the task. Defaults to None.
         """
-        for task in self.tasks:
-            if task.id == id:
-                return task
-        return None
-
-    def update_task(self, id, title=None, description=None, due_date=None):
-        """
-        Update a task's details.
-
-        Args:
-            id (int): Task ID.
-            title (str, optional): New task title. Defaults to None.
-            description (str, optional): New task description. Defaults to None.
-            due_date (str, optional): New task due date. Defaults to None.
-
-        Returns:
-            bool: True if the task was updated successfully, False otherwise.
-        """
-        task = self.get_task(id)
-        if task is not None:
+        if 0 <= index < len(self.tasks):
+            task = self.tasks[index]
             if title:
                 task.title = title
             if description:
                 task.description = description
-            if due_date:
-                task.due_date = due_date
-            return True
-        return False
 
-    def delete_task(self, id):
+    def delete_task(self, index):
         """
-        Delete a task by its ID.
+        Delete a task from the list.
 
         Args:
-            id (int): Task ID.
+            index (int): The index of the task to delete.
+        """
+        if 0 <= index < len(self.tasks):
+            del self.tasks[index]
 
-        Returns:
-            bool: True if the task was deleted successfully, False otherwise.
+    def display_tasks(self):
+        """
+        Print a list of all tasks.
         """
         for i, task in enumerate(self.tasks):
-            if task.id == id:
-                del self.tasks[i]
-                return True
-        return False
+            status = "Completed" if task.completed else "Incomplete"
+            print(f"{i+1}. {task.title} - {status}")
+            if task.description:
+                print(f"  Description: {task.description}")
 
-    def list_tasks(self):
-        """
-        Get a list of all tasks.
 
-        Returns:
-            list[Task]: The list of tasks.
-        """
-        return self.tasks
+def main():
+    # Example usage
+    manager = TaskManager()
+    while True:
+        print("\nTask Manager")
+        print("1. Create Task")
+        print("2. Read Tasks")
+        print("3. Update Task")
+        print("4. Delete Task")
+        print("5. Display Tasks")
+        print("6. Quit")
+        choice = input("Choose an option: ")
+        if choice == "1":
+            title = input("Enter task title: ")
+            description = input("Enter task description (optional): ")
+            manager.create_task(title, description)
+        elif choice == "2":
+            tasks = manager.read_tasks()
+            for i, task in enumerate(tasks):
+                print(f"{i+1}. {task.title}")
+        elif choice == "3":
+            index = int(input("Enter task index: ")) - 1
+            title = input("Enter new task title (optional): ")
+            description = input("Enter new task description (optional): ")
+            manager.update_task(index, title or None, description or None)
+        elif choice == "4":
+            index = int(input("Enter task index: ")) - 1
+            manager.delete_task(index)
+        elif choice == "5":
+            manager.display_tasks()
+        elif choice == "6":
+            break
 
-# Example usage
+
 if __name__ == "__main__":
-    task_manager = TaskManager()
-
-    # Create some tasks
-    task1 = task_manager.create_task("Buy milk", "Get 2 liters of milk")
-    task2 = task_manager.create_task("Walk the dog", "Take the dog for a 30-minute walk")
-
-    # Print the list of tasks
-    print("Tasks:")
-    for task in task_manager.list_tasks():
-        print(f"ID: {task.id}, Title: {task.title}, Description: {task.description}")
-
-    # Update a task
-    task_manager.update_task(task1.id, description="Get 3 liters of milk")
-    print("\nUpdated task:")
-    print(f"ID: {task1.id}, Title: {task1.title}, Description: {task1.description}")
-
-    # Delete a task
-    task_manager.delete_task(task2.id)
-    print("\nTasks after deletion:")
-    for task in task_manager.list_tasks():
-        print(f"ID: {task.id}, Title: {task.title}, Description: {task.description}")
+    main()
 ```
-### API Documentation
 
-* `Task`: Represents a single task with an ID, title, description, and due date.
-	+ `__init__(id, title, description, due_date=None)`: Initialize a new task.
-* `TaskManager`: Manages a list of tasks.
-	+ `__init__()`: Initialize the task manager with an empty list of tasks.
-	+ `create_task(title, description, due_date=None)`: Create a new task and add it to the list.
-	+ `get_task(id)`: Get a task by its ID.
-	+ `update_task(id, title=None, description=None, due_date=None)`: Update a task's details.
-	+ `delete_task(id)`: Delete a task by its ID.
-	+ `list_tasks()`: Get a list of all tasks.
+### Example Use Cases
 
-### Usage
-
-1. Import the module: `import task_manager`
-2. Create a new task manager instance: `task_manager = task_manager.TaskManager()`
-3. Create tasks using the `create_task` method: `task1 = task_manager.create_task("Buy milk", "Get 2 liters of milk")`
-4. Update tasks using the `update_task` method: `task_manager.update_task(task1.id, description="Get 3 liters of milk")`
-5. Delete tasks using the `delete_task` method: `task_manager.delete_task(task2.id)`
-6. List all tasks using the `list_tasks` method: `tasks = task_manager.list_tasks()`
+*   Create a new task: `manager.create_task("Buy groceries", "Milk, eggs, and bread")`
+*   Read all tasks: `tasks = manager.read_tasks()`
+*   Update an existing task: `manager.update_task(0, title="New title")`
+*   Delete a task: `manager.delete_task(0)`
+*   Display all tasks: `manager.display_tasks()`

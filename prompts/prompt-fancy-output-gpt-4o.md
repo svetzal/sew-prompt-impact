@@ -1,84 +1,87 @@
-Certainly! Let's create a simple Python module to manage a list of tasks. We'll adhere to the conventions and principles you've provided. The module will include functionality to add, remove, and list tasks, each represented as a `Task` model. We'll also add the ability to mark tasks as completed.
-
-Here's how we can structure the module:
+Certainly! Here's a Python module that can manage a list of tasks, adhering to the baseline conventions and principles you've outlined:
 
 ```python
-from typing import List
-from pydantic import BaseModel
-import datetime
-
+from typing import List, Optional
+from pydantic import BaseModel, Field, validate_arguments, ValidationError
 
 class Task(BaseModel):
-    """Represents a task with a title, description, and completion status."""
-
-    title: str
-    description: str
-    completed: bool = False
-    created_at: datetime.datetime = datetime.datetime.now()
-
-    def mark_complete(self) -> None:
-        """Marks the task as completed."""
-        self.completed = True
-
+    """Represents a single task with a description and completion status."""
+    
+    description: str = Field(..., min_length=1, max_length=100, example="Sample task")
+    is_completed: bool = False
 
 class TaskManager:
-    """Manages a list of tasks, enabling addition, removal, and listing of tasks."""
-
+    """Manages a list of tasks."""
+    
     def __init__(self) -> None:
+        """Initializes a new TaskManager with an empty list of tasks."""
         self.tasks: List[Task] = []
 
-    def add_task(self, title: str, description: str = "") -> Task:
+    @validate_arguments
+    def add_task(self, task: Task) -> None:
         """Adds a new task to the list.
 
         Args:
-            title: The title of the task.
-            description: Optional detailed description of the task.
-
-        Returns:
-            The created task.
+            task: The task to be added.
         """
-        task = Task(title=title, description=description)
         self.tasks.append(task)
-        return task
-
-    def remove_task(self, index: int) -> bool:
-        """Removes a task by index.
-
-        Args:
-            index: The index of the task to remove.
-
-        Returns:
-            True if the task was successfully removed, False otherwise.
-        """
-        if 0 <= index < len(self.tasks):
-            del self.tasks[index]
-            return True
-        return False
 
     def list_tasks(self) -> List[Task]:
         """Lists all tasks.
 
         Returns:
-            A list of all tasks.
+            A list of tasks.
         """
         return self.tasks
 
+    @validate_arguments
+    def complete_task(self, index: int) -> None:
+        """Marks the task at the given index as completed.
 
-# Example Usages
+        Args:
+            index: The index of the task to complete.
+
+        Raises:
+            IndexError: If the index is out of bounds.
+        """
+        try:
+            self.tasks[index].is_completed = True
+        except IndexError:
+            raise IndexError("Task index out of bounds.")
+
+    @validate_arguments
+    def remove_task(self, index: int) -> None:
+        """Removes the task at the given index from the list.
+
+        Args:
+            index: The index of the task to remove.
+
+        Raises:
+            IndexError: If the index is out of bounds.
+        """
+        try:
+            self.tasks.pop(index)
+        except IndexError:
+            raise IndexError("Task index out of bounds.")
+
 if __name__ == "__main__":
-    manager = TaskManager()
-    manager.add_task("Write documentation")
-    manager.add_task("Implement feature", "Feature details")
-    print(manager.list_tasks())
-    manager.tasks[0].mark_complete()
-    manager.remove_task(1)
-    print(manager.list_tasks())
+    task_manager = TaskManager()
+    try:
+        # Example usage
+        task1 = Task(description="Implement task manager")
+        task_manager.add_task(task1)
+        task_manager.add_task(Task(description="Write tests"))
+        task_manager.complete_task(0)
+        for task in task_manager.list_tasks():
+            print(task)
+    except ValidationError as e:
+        print(e)
 ```
 
-### Key Aspects:
-- **Type Hints & Docstrings:** We've included type hints throughout and docstrings in the Google format to describe the functionality of each method.
-- **pydantic for Task:** The `Task` class is implemented using `pydantic.BaseModel` for data validation and ease of attribute management.
-- **Task Management:** The `TaskManager` class handles task operations, keeping the interface clean and simple.
-- **Example Usage:** An example usage block shows how the module might be used practically, though in practice you'll likely want to separate this from the module in a real application.
+### Key Features:
+- **Type Hints & Validation**: The module uses `pydantic` for data validation and type checking. All functions use type hints.
+- **Task Management**: It provides functionalities to add, list, complete, and remove tasks.
+- **Error Handling**: Index out of bounds exceptions are handled explicitly with informative messages.
+- **Documentation**: Each method includes a docstring in Google format.
 
-This module is ready to use in a larger application or for further extension, with a focus on clarity, simplicity, and alignment with your established conventions.
+This structure ensures clarity, maintainability, and ease of testing. You can expand or refactor it to support more features such as task prioritization, deadlines, or user-friendly output as needed.

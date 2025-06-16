@@ -1,190 +1,193 @@
-Below is a self-contained Python module `tasks.py` plus accompanying tests under `tests/test_tasks.py`. It follows your conventions: 
+Below is a self-contained module and accompanying tests. It uses pydantic for the `Task` model, provides a `TaskManager` for in-memory task CRUD, and exercises everything with pytest. All code is mypy-strict-compatible.
 
-- 100% type hints (mypy‐strict clean)  
-- pydantic models for data  
-- pure “core” functions that return new lists  
-- an imperative shell (`TaskManager`) that wraps those functions  
-- Google-style docstrings  
-- ready for pytest, flake8, black  
-
----
-
-File: tasks.py
+tasks.py
+---------
 ```python
-from typing import List, Optional, Sequence
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Dict, List, Optional
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 
-class Task(BaseModel):
-    """A single task with an auto-assigned ID and completion flag."""
+class TaskNotFoundError(Exception):
+    """Raised when a task with the given ID does not exist."""
 
-    id: int
-    title: str = Field(..., min_length=1)
+
+class Task(BaseModel):
+    """A single task with metadata and status."""
+
+    id: UUID = Field(default_factory=uuid4)
+    title: str
     description: Optional[str] = None
     completed: bool = False
-
-
-def _next_id(tasks: Sequence[Task]) -> int:
-    """Return the next available task ID."""
-    if not tasks:
-        return 1
-    return max(task.id for task in tasks) + 1
-
-
-def add_task(
-    tasks: Sequence[Task], title: str, description: Optional[str] = None
-) -> List[Task]:
-    """Return a new list with an added task."""
-    new = Task(id=_next_id(tasks), title=title, description=description)
-    return list(tasks) + [new]
-
-
-def remove_task(tasks: Sequence[Task], task_id: int) -> List[Task]:
-    """Return a new list with the task of given ID removed.
-
-    Raises:
-        ValueError: If no task with `task_id` exists.
-    """
-    if not any(t.id == task_id for t in tasks):
-        raise ValueError(f"No task with id={task_id!r}")
-    return [t for t in tasks if t.id != task_id]
-
-
-def mark_completed(tasks: Sequence[Task], task_id: int) -> List[Task]:
-    """Return a new list where the given task is marked completed.
-
-    Raises:
-        ValueError: If no task with `task_id` exists.
-    """
-    found = False
-    new_tasks: List[Task] = []
-    for t in tasks:
-        if t.id == task_id:
-            found = True
-            new_tasks.append(t.copy(update={"completed": True}))
-        else:
-            new_tasks.append(t)
-    if not found:
-        raise ValueError(f"No task with id={task_id!r}")
-    return new_tasks
-
-
-def get_task(tasks: Sequence[Task], task_id: int) -> Task:
-    """Retrieve a single task by ID.
-
-    Raises:
-        ValueError: If no task with `task_id` exists.
-    """
-    for t in tasks:
-        if t.id == task_id:
-            return t
-    raise ValueError(f"No task with id={task_id!r}")
-
-
-def list_tasks(tasks: Sequence[Task]) -> List[Task]:
-    """Return tasks in insertion order."""
-    return list(tasks)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    due_date: Optional[datetime] = None
 
 
 class TaskManager:
-    """Imperative shell around the pure task-list functions."""
+    """Manage a collection of tasks in memory."""
 
     def __init__(self) -> None:
-        self._tasks: List[Task] = []
+        self._tasks: Dict[UUID, Task] = {}
 
-    def add(self, title: str, description: Optional[str] = None) -> Task:
-        """Create and store a new task, returning it."""
-        self._tasks = add_task(self._tasks, title, description)
-        return self._tasks[-1]
+    def add_task(
+        self, title: str, description: Optional[str] = None, due_date: Optional[datetime] = None
+    ) -> Task:
+        """Create a new task and store it."""
+        task = Task(title=title, description=description, due_date=due_date)
+        self._tasks[task.id] = task
+        return task
 
-    def remove(self, task_id: int) -> None:
-        """Remove a task by ID."""
-        self._tasks = remove_task(self._tasks, task_id)
+    def get_task(self, task_id: UUID) -> Task:
+        """Fetch a task by its ID, or raise TaskNotFoundError."""
+        try:
+            return self._tasks[task_id]
+        except KeyError as e:
+            raise TaskNotFoundError(f"Task {task_id} not found") from e
 
-    def complete(self, task_id: int) -> Task:
-        """Mark a task completed and return its updated version."""
-        self._tasks = mark_completed(self._tasks, task_id)
-        return get_task(self._tasks, task_id)
+    def list_tasks(self, completed: Optional[bool] = None) -> List[Task]:
+        """
+        List tasks, optionally filtering by completion status.
+        
+        Args:
+            completed: if True, only completed tasks; if False, only pending;
+                       if None, all tasks.
+        """
+        tasks = list(self._tasks.values())
+        if completed is None:
+            return tasks
+        return [t for t in tasks if t.completed is completed]
 
-    def get(self, task_id: int) -> Task:
-        """Retrieve a task by ID."""
-        return get_task(self._tasks, task_id)
+    def update_task(
+        self,
+        task_id: UUID,
+        *,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        due_date: Optional[datetime] = None,
+    ) -> Task:
+        """
+        Update mutable fields of a task.
+        
+        Only provided fields will be changed.
+        """
+        task = self.get_task(task_id)
+        update_data = task.dict()
+        if title is not None:
+            update_data["title"] = title
+        if description is not None:
+            update_data["description"] = description
+        if due_date is not None:
+            update_data["due_date"] = due_date
+        updated = Task(**update_data)
+        self._tasks[task_id] = updated
+        return updated
 
-    def all(self) -> List[Task]:
-        """List all tasks."""
-        return list_tasks(self._tasks)
+    def remove_task(self, task_id: UUID) -> None:
+        """Delete a task, or raise TaskNotFoundError."""
+        if task_id not in self._tasks:
+            raise TaskNotFoundError(f"Task {task_id} not found")
+        del self._tasks[task_id]
+
+    def mark_completed(self, task_id: UUID) -> Task:
+        """Mark the given task as completed."""
+        task = self.get_task(task_id)
+        if not task.completed:
+            task = task.copy(update={"completed": True})
+            self._tasks[task_id] = task
+        return task
+
+    def mark_incomplete(self, task_id: UUID) -> Task:
+        """Mark the given task as not completed."""
+        task = self.get_task(task_id)
+        if task.completed:
+            task = task.copy(update={"completed": False})
+            self._tasks[task_id] = task
+        return task
 ```
 
-File: tests/test_tasks.py
+tests/test_tasks.py
+-------------------
 ```python
 import pytest
+from datetime import datetime, timedelta
+from uuid import UUID
 
-from tasks import (
-    Task,
-    TaskManager,
-    add_task,
-    get_task,
-    list_tasks,
-    mark_completed,
-    remove_task,
-)
+from tasks import TaskManager, TaskNotFoundError
 
 
-def test_add_and_list_tasks() -> None:
-    tasks: list[Task] = []
-    tasks = add_task(tasks, title="Write tests", description="for task manager")
-    tasks = add_task(tasks, title="Review code")
-    assert len(tasks) == 2
-    assert list_tasks(tasks)[0].id == 1
-    assert list_tasks(tasks)[1].id == 2
+@pytest.fixture
+def manager() -> TaskManager:
+    return TaskManager()
 
 
-def test_get_task_success_and_failure() -> None:
-    tasks = add_task([], title="One")
-    t = get_task(tasks, 1)
-    assert t.title == "One"
-    with pytest.raises(ValueError):
-        get_task(tasks, 999)
+def test_add_and_get_task(manager: TaskManager) -> None:
+    t = manager.add_task("Write code", "Implement feature")
+    fetched = manager.get_task(t.id)
+    assert fetched.id == t.id
+    assert fetched.title == "Write code"
+    assert fetched.description == "Implement feature"
+    assert not fetched.completed
 
 
-def test_remove_task() -> None:
-    tasks = []
-    tasks = add_task(tasks, title="A")
-    tasks = add_task(tasks, title="B")
-    tasks2 = remove_task(tasks, 1)
-    assert len(tasks2) == 1
-    assert tasks2[0].id == 2
-    with pytest.raises(ValueError):
-        remove_task(tasks2, 999)
+def test_list_tasks_filters(manager: TaskManager) -> None:
+    a = manager.add_task("A")
+    b = manager.add_task("B")
+    manager.mark_completed(b.id)
+    all_tasks = manager.list_tasks()
+    done = manager.list_tasks(completed=True)
+    pending = manager.list_tasks(completed=False)
+    assert set(t.id for t in all_tasks) == {a.id, b.id}
+    assert [t.id for t in done] == [b.id]
+    assert [t.id for t in pending] == [a.id]
 
 
-def test_mark_completed() -> None:
-    tasks = []
-    tasks = add_task(tasks, title="X")
-    assert not tasks[0].completed
-    tasks2 = mark_completed(tasks, 1)
-    assert tasks2[0].completed is True
-    with pytest.raises(ValueError):
-        mark_completed(tasks, 999)
+def test_update_task(manager: TaskManager) -> None:
+    t = manager.add_task("Old", None)
+    new_due = datetime.utcnow() + timedelta(days=1)
+    updated = manager.update_task(t.id, title="New", description="Desc", due_date=new_due)
+    assert updated.title == "New"
+    assert updated.description == "Desc"
+    assert updated.due_date == new_due
+    # other fields preserved
+    assert updated.id == t.id
+    assert not updated.completed
 
 
-def test_task_manager_integration() -> None:
-    tm = TaskManager()
-    t1 = tm.add("Task1")
-    t2 = tm.add("Task2", "desc")
-    assert tm.all() == [t1, t2]
-    tm.complete(t1.id)
-    assert tm.get(t1.id).completed
-    tm.remove(t2.id)
-    assert [t.id for t in tm.all()] == [t1.id]
+def test_remove_task(manager: TaskManager) -> None:
+    t = manager.add_task("X")
+    manager.remove_task(t.id)
+    with pytest.raises(TaskNotFoundError):
+        manager.get_task(t.id)
+
+
+def test_mark_complete_and_incomplete(manager: TaskManager) -> None:
+    t = manager.add_task("flip")
+    c = manager.mark_completed(t.id)
+    assert c.completed
+    i = manager.mark_incomplete(t.id)
+    assert not i.completed
+
+
+def test_not_found_errors(manager: TaskManager) -> None:
+    fake_id = UUID(int=0)
+    with pytest.raises(TaskNotFoundError):
+        manager.get_task(fake_id)
+    with pytest.raises(TaskNotFoundError):
+        manager.remove_task(fake_id)
+    with pytest.raises(TaskNotFoundError):
+        manager.mark_completed(fake_id)
+    with pytest.raises(TaskNotFoundError):
+        manager.update_task(fake_id, title="nope")
 ```
 
 To run:
 
-1. `pip install pydantic pytest mypy flake8 black`
-2. `black . && flake8`
-3. `mypy --strict tasks.py tests/test_tasks.py`
-4. `pytest`
+1. `pip install pydantic pytest`
+2. `mypy --strict tasks.py`
+3. `pytest --maxfail=1 --disable-warnings -q`
 
-All tests should pass.
+All tests should pass, and mypy should report no errors.

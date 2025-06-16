@@ -1,83 +1,123 @@
-Certainly! Here's a Python module, following your conventions, for managing a list of tasks.  
-Includes:  
-- A `Task` model (`pydantic.BaseModel`)  
-- A `TaskList` manager class  
-- Methods to add, mark complete, and list tasks  
-- 100% type coverage, lintable, and formatted  
-- In-memory only (imperative shell, functional core)  
-- No unnecessary abstractions
+Certainly! Let's deliver a simple, type-safe **tasks module** that:
+
+- Provides a `Task` data model (with validation via [pydantic](https://docs.pydantic.dev/))
+- Offers a `TaskManager` class to add, remove, and list tasks, and mark them as done
+- Separates core logic from I/O (imperative shell)
+- Follows your conventions (flake8/black, type hints, docstrings, etc.)
+- 100% testable: no CLI or persistence included—functional core only
+
+Let’s implement that:
 
 ```python
+# tasks.py
+
 from typing import List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 
 
 class Task(BaseModel):
-    """Represents an individual task."""
+    """A task item with a name, status and optional description."""
 
-    title: str = Field(min_length=1)
+    name: str = Field(..., min_length=1)
     description: Optional[str] = None
     completed: bool = False
 
-    def mark_complete(self) -> "Task":
-        """Return a copy with completed set to True."""
-        return self.copy(update={"completed": True})
+    @validator("name")
+    def name_cannot_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("name cannot be blank")
+        return value
 
 
-class TaskList:
-    """Manages a list of tasks."""
+class TaskManager:
+    """Manages a collection of tasks."""
 
     def __init__(self) -> None:
+        """Initialise an empty task list."""
         self._tasks: List[Task] = []
 
-    def add_task(self, title: str, description: Optional[str] = None) -> Task:
-        """Add a new task and return it."""
-        task = Task(title=title, description=description)
+    def add_task(self, name: str, description: Optional[str] = None) -> Task:
+        """
+        Add a new task.
+
+        Args:
+            name: Task title.
+            description: Details about the task.
+
+        Returns:
+            Task: The task created.
+        """
+        task = Task(name=name, description=description)
         self._tasks.append(task)
         return task
 
-    def list_tasks(self, include_completed: bool = True) -> List[Task]:
-        """Return all tasks, filtered by completion if requested."""
-        if include_completed:
+    def remove_task(self, name: str) -> None:
+        """
+        Remove a task by name.
+
+        Args:
+            name: Exact name of the task to remove.
+
+        Raises:
+            ValueError: If no task with given name exists.
+        """
+        index = self._find_task_index(name)
+        self._tasks.pop(index)
+
+    def list_tasks(self, completed: Optional[bool] = None) -> List[Task]:
+        """
+        List tasks, optionally filtering by completion.
+
+        Args:
+            completed: If set, filter by completed/incomplete.
+
+        Returns:
+            List[Task]: Matching tasks.
+        """
+        if completed is None:
             return list(self._tasks)
-        return [t for t in self._tasks if not t.completed]
+        return [task for task in self._tasks if task.completed == completed]
 
-    def complete_task(self, index: int) -> Task:
-        """Mark the task at the given index as complete."""
-        try:
-            task = self._tasks[index]
-        except IndexError as exc:
-            raise ValueError(f"No task at index {index}") from exc
-        updated = task.mark_complete()
-        self._tasks[index] = updated
-        return updated
+    def mark_done(self, name: str) -> Task:
+        """
+        Mark a task as completed.
 
-    def remove_task(self, index: int) -> Task:
-        """Remove and return the task at the given index."""
-        try:
-            return self._tasks.pop(index)
-        except IndexError as exc:
-            raise ValueError(f"No task at index {index}") from exc
+        Args:
+            name: Exact name of the task.
 
-    def count(self, include_completed: bool = True) -> int:
-        """Return the number of tasks."""
-        return len(self.list_tasks(include_completed=include_completed))
+        Returns:
+            Task: Updated task.
+
+        Raises:
+            ValueError: If no such task found.
+        """
+        index = self._find_task_index(name)
+        self._tasks[index].completed = True
+        return self._tasks[index]
+
+    def _find_task_index(self, name: str) -> int:
+        """
+        Find the index of a task by name.
+
+        Args:
+            name: Exact name to match.
+
+        Returns:
+            int: Index in the list.
+
+        Raises:
+            ValueError: If not found.
+        """
+        for i, task in enumerate(self._tasks):
+            if task.name == name:
+                return i
+        raise ValueError(f"No task found with name: {name!r}")
 ```
 
-**Test Example (not included in module):**
-```python
-if __name__ == "__main__":
-    tasks = TaskList()
-    tasks.add_task("Buy milk")
-    tasks.add_task("Read emails", "Work through inbox")
-    print(tasks.list_tasks(include_completed=False))
-    tasks.complete_task(0)
-    print(tasks.list_tasks(include_completed=False))
-    print(tasks.list_tasks())
-```
+---
 
-**Lint/Type Check:**  
-- Passes `flake8` (w/plugins), `black`, and `mypy --strict`
-- All entities necessary, no indirection
+**Next steps (if you want):**
 
-Let me know if you need file I/O, persistence, or advanced querying!
+- Would you like some unit tests for this module?
+- Do you need persistence (saving/loading)?
+- Or a basic CLI or API shell?

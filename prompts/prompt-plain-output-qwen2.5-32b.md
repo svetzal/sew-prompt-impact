@@ -1,94 +1,103 @@
-Sure! I'll create a Python module for you that can help manage a list of tasks. This module will include functions to add, remove, and display tasks. Let's name this module `task_manager.py`.
+Sure! I'll create a simple Python module to help you manage a list of tasks. This module will allow you to add tasks, remove them by name or index, mark tasks as complete, and display the current list of tasks.
 
-Here’s the content of `task_manager.py`:
+Let's get started:
+
+1. Create a new file named `task_manager.py`.
+
+2. Define functions in this file to handle adding tasks, removing tasks, marking tasks as completed, and displaying all tasks.
+
+3. Save it in your desired directory.
+
+Here is the content for `task_manager.py`:
 
 ```python
-# task_manager.py
-
 class TaskManager:
     def __init__(self):
         self.tasks = []
 
-    def add_task(self, task_description):
-        """Add a new task to the list."""
-        if not task_description:
-            return "Task cannot be empty."
+    def add_task(self, task_name):
+        """Adds a new task to the list."""
+        if not isinstance(task_name, str) or task_name.strip() == "":
+            raise ValueError("Task name must be a non-empty string.")
         
-        # Ensure no duplicate tasks are added.
-        for existing_task in self.tasks:
-            if existing_task['description'] == task_description:
-                return f"Task '{task_description}' already exists."
-
-        task = {'description': task_description, 'completed': False}
-        self.tasks.append(task)
-        return "Task added successfully!"
-
-    def remove_task(self, task_index):
-        """Remove a specific task from the list."""
-        if 0 <= task_index < len(self.tasks):
-            removed_task = self.tasks.pop(task_index)
-            return f"Removed: {removed_task['description']}"
+        if any(t["name"] == task_name for t in self.tasks):
+            print(f"Warning: Task '{task_name}' already exists.")
         else:
-            return "Invalid index. Task not found."
+            self.tasks.append({"name": task_name, "completed": False})
+            print(f"Task added: {task_name}")
 
-    def complete_task(self, task_index):
-        """Mark a specific task as completed."""
-        if 0 <= task_index < len(self.tasks) and not self.tasks[task_index]['completed']:
-            self.tasks[task_index]['completed'] = True
-            return f"Task '{self.tasks[task_index]['description']}' marked as complete."
+    def remove_task(self, task_id=None, task_name=None):
+        """Removes a task by its index or name."""
+        if task_id is not None and 0 <= task_id < len(self.tasks):
+            removed_task = self.tasks.pop(task_id)
+            print(f"Task removed: {removed_task['name']}")
+        elif task_name:
+            for idx, task in enumerate(self.tasks):
+                if task["name"] == task_name:
+                    removed_task = self.tasks.pop(idx)
+                    print(f"Task removed: {task_name}")
+                    break
+            else:
+                print(f"Task '{task_name}' not found.")
         else:
-            return "Invalid index or already completed."
+            print("Invalid index or name provided.")
+
+    def mark_completed(self, task_id=None, task_name=None):
+        """Marks a task as completed by its index or name."""
+        if task_id is not None and 0 <= task_id < len(self.tasks):
+            self.tasks[task_id]["completed"] = True
+            print(f"Marked as completed: {self.tasks[task_id]['name']}")
+        elif task_name:
+            for task in self.tasks:
+                if task["name"] == task_name:
+                    task["completed"] = True
+                    print(f"Marked as completed: {task_name}")
+                    break
+            else:
+                print(f"Task '{task_name}' not found.")
+        else:
+            print("Invalid index or name provided.")
 
     def list_tasks(self):
-        """List all tasks, indicating which ones are completed."""
+        """Lists all tasks in the manager."""
         if not self.tasks:
-            return "No tasks found!"
-        
-        task_list = []
-        for i, task in enumerate(self.tasks):
-            status = "[x]" if task['completed'] else "[ ]"
-            task_list.append(f"{i}. {status} {task['description']}")
-        
-        return '\n'.join(task_list)
+            print("No tasks to show.")
+        for idx, task in enumerate(self.tasks):
+            status = "Completed" if task["completed"] else "Pending"
+            print(f"{idx}. {task['name']} - {status}")
 
-
-# Example usage:
+# Example usage
 if __name__ == "__main__":
-    tm = TaskManager()
+    manager = TaskManager()
     
-    print(tm.add_task("Buy groceries"))
-    print(tm.add_task("Finish homework"))
-    print(tm.list_tasks())
-    print(tm.complete_task(0))
-    print(tm.remove_task(1))
-    print(tm.list_tasks())
+    # Add tasks
+    manager.add_task("Buy groceries")
+    manager.add_task("Read a book")
+
+    # List tasks
+    manager.list_tasks()
+
+    # Mark a task as completed by name
+    manager.mark_completed(task_name="Buy groceries")
+
+    # Remove a task by index
+    manager.remove_task(task_id=1)
+
+    # List tasks again
+    manager.list_tasks()
 ```
 
-To use the module, you can import it into another Python script or run this script directly. Here's an example of how to interact with the `TaskManager` class:
+To use this module in another Python script or interactive session, you can import it and create an instance of `TaskManager`, then call its methods to manage your tasks.
+
+Example:
 
 ```python
 from task_manager import TaskManager
 
-# Initialize a TaskManager instance.
-tm = TaskManager()
-
-# Adding tasks
-print(tm.add_task("Learn Python"))
-print(tm.add_task("Read a book"))
-
-# Displaying all tasks
-print("\nCurrent Tasks:")
-print(tm.list_tasks())
-
-# Marking a task as completed
-print(tm.complete_task(0))
-
-# Removing a task
-print(tm.remove_task(1))
-
-# Final display of tasks after completing and removing some tasks.
-print("\nFinal Tasks:")
-print(tm.list_tasks())
+manager = TaskManager()
+manager.add_task("Finish the project")
+manager.mark_completed(task_id=0)
+manager.list_tasks()
 ```
 
-This module provides a simple yet effective way to manage tasks. You can expand it further based on your needs, such as adding features for editing tasks or saving/loading task lists from files.
+This module is quite basic but provides a good foundation for managing tasks. You can extend it further with more features or customizations as needed!

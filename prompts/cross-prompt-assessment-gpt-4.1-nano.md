@@ -1,22 +1,33 @@
-| Prompt Style | Code Complexity | Type Hints / Validation | Overall Design | Strengths                                        | Weaknesses                                        |
-|-------------:|:---------------:|:------------------------:|:--------------:|:------------------------------------------------|:--------------------------------------------------|
-|    Fancy     | Higher          | Yes (pydantic)          | Sophisticated  | • Strong validation<br>• Clear docstrings<br>• Conforms to advanced Python practices | • More verbose code<br>• Requires additional dependencies (pydantic) |
-|    Plain     | Lower           | No                      | Straightforward| • Easy to understand<br>• Simple to set up      | • No built-in validation<br>• Minimal documentation / type checks    |
+| Prompt Style | Approach & Key Features                                                                                               | Strengths                                                                                         | Weaknesses                                                                                |
+|--------------|-----------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| fancy        | • Class-based OOP with a Task model (pydantic) and TaskManager. <br> • Full type hints, docstrings, and next ID tracking. <br> • Provides CRUD methods and filtering. | • Comprehensive design with validation (pydantic). <br> • Clear docstrings and type coverage. <br> • Easy to extend and maintain. | • Slightly verbose for smaller use cases. <br> • Requires pydantic dependency.             |
+| medium       | • Functional style with a frozen dataclass Task. <br> • Separate pure functions for add, remove, toggle, list. <br> • Includes thorough unittest test suite.           | • Good test coverage demonstrating best practices. <br> • Clear separation of concerns. <br> • Immutable data model.               | • Requires a separate test file for quick usage. <br> • May need additional validation logic. |
+| plain        | • Single-file, class-based approach. <br> • Basic Task class storing description/completion status. <br> • Methods for add, remove, complete, list.                   | • Very straightforward, minimal dependencies. <br> • Easy to integrate quickly in small projects.  | • No explicit tests included. <br> • Lacks type hints and more robust validation.          |
 
-## Qualitative Analysis
+---
 
-1. Which prompt style gives the best results overall?
+## Extended Qualitative Analysis
 
-   • The “fancy” prompt style generally yields a more robust and maintainable code solution. It includes type hints, docstrings, and validation with pydantic, making it suitable for larger or more formal projects.  
-   • The “plain” style is simpler and more lightweight, which can be advantageous for smaller scripts or quick prototypes.
+1) Which prompt style gives the best results overall?  
+   • The "fancy" prompt yields the most thorough and well‑structured solution, featuring pydantic for validation, comprehensive type hints, docstrings, and a clear OOP design. If a user values correctness, extensibility, and clarity in a larger project, the "fancy" approach stands out.  
+   • However, the "medium" prompt also offers strong benefits, especially its focus on a purely functional style, an immutable data model, and a proper test suite for continuous integration. This approach can be considered equally robust from a software‑engineering perspective.  
+   • If the goal is to get a quick, minimal solution without setup overhead, or for a short demo, the "plain" prompt is enough.
 
-2. What aspects of the model's response differ between the different prompt styles?
+2) What aspects of the model's response differ between the different prompt styles?  
+   • Code architecture:  
+     – "fancy" uses a more OOP‑centric approach combined with pydantic’s data validation.  
+     – "medium" emphasizes functional purity and testing.  
+     – "plain" presents a straightforward, single‑file solution without advanced features.  
+   • Testing:  
+     – "medium" includes a dedicated unittest module, demonstrating more rigorous testing.  
+     – "fancy" includes some docstring coverage and an OOP approach but doesn’t show explicit tests.  
+     – "plain" has example usage within the same file, rather than a separate test suite.  
+   • Validation and type usage:  
+     – "fancy" has complete type hints and uses pydantic.  
+     – "medium" uses standard type hints, a frozen dataclass for immutability, but no external libraries.  
+     – "plain" omits explicit type hints.  
 
-   • The “fancy” style enforces a stricter coding guideline, employing type hints (`List[Task]`), using pydantic for validation, and providing detailed docstrings.  
-   • The “plain” style omits docstrings, type hints, and external dependencies, focusing on straightforward classes and methods without extra validation or documentation.
-
-3. What aspects of the model's response are consistent across all prompt styles?
-
-   • Both solutions correctly manage a list of tasks, allowing for task creation, removal, listing, and status updates.  
-   • Each provides an object-oriented approach (a `Task` class and a `TaskManager` class).  
-   • Both responses demonstrate basic clarity of intent and show standard Python usage for user interactions (like `add_task()`, `remove_task()`, etc.).
+3) What aspects of the model's response are consistent across all prompt styles?  
+   • Core functionality is the same, providing a means to add, remove, and mark tasks as completed, as well as listing tasks.  
+   • All outputs demonstrate straightforward, readable Python code.  
+   • Each style is designed to be easily understandable and modifiable according to the user’s needs.

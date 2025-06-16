@@ -1,80 +1,73 @@
-Sure! Here's a simple Python module for managing a list of tasks. It provides functionalities to add, remove, update, list, and mark tasks as done.
+Sure! Here's a simple Python module that can manage a list of tasks. It supports adding, removing, listing, and marking tasks as completed.
+
+You can save this as `task_manager.py` and then use it in your projects.
 
 ```python
-# task_manager.py
+from typing import List, Optional
 
 class Task:
-    def __init__(self, description):
+    def __init__(self, description: str):
         self.description = description
         self.completed = False
 
-    def mark_done(self):
+    def mark_completed(self):
         self.completed = True
 
-    def __str__(self):
+    def __repr__(self):
         status = "✓" if self.completed else "✗"
         return f"[{status}] {self.description}"
 
 
 class TaskManager:
     def __init__(self):
-        self.tasks = []
+        self.tasks: List[Task] = []
 
-    def add_task(self, description):
+    def add_task(self, description: str):
         task = Task(description)
         self.tasks.append(task)
+        print(f"Added task: {description}")
 
-    def remove_task(self, index):
+    def remove_task(self, index: int) -> bool:
         if 0 <= index < len(self.tasks):
-            del self.tasks[index]
+            removed = self.tasks.pop(index)
+            print(f"Removed task: {removed.description}")
+            return True
         else:
-            raise IndexError("Task index out of range")
-
-    def mark_done(self, index):
-        if 0 <= index < len(self.tasks):
-            self.tasks[index].mark_done()
-        else:
-            raise IndexError("Task index out of range")
-
-    def update_task(self, index, new_description):
-        if 0 <= index < len(self.tasks):
-            self.tasks[index].description = new_description
-        else:
-            raise IndexError("Task index out of range")
+            print("Error: Task index out of range.")
+            return False
 
     def list_tasks(self):
-        return [str(task) for task in self.tasks]
+        if not self.tasks:
+            print("No tasks available.")
+            return
+        for i, task in enumerate(self.tasks):
+            print(f"{i}: {task}")
 
-    def __len__(self):
-        return len(self.tasks)
+    def mark_task_completed(self, index: int) -> bool:
+        if 0 <= index < len(self.tasks):
+            self.tasks[index].mark_completed()
+            print(f"Marked task {index} as completed.")
+            return True
+        else:
+            print("Error: Task index out of range.")
+            return False
 
-
-if __name__ == "__main__":
-    # demo usage
-    manager = TaskManager()
-    manager.add_task("Buy groceries")
-    manager.add_task("Prepare presentation")
-    manager.mark_done(0)
-    manager.update_task(1, "Prepare presentation slides")
-
-    for i, task_str in enumerate(manager.list_tasks()):
-        print(f"{i}. {task_str}")
+    def get_tasks(self) -> List[Task]:
+        return self.tasks.copy()
 ```
 
-Save this as `task_manager.py`. You can then import and use it like this:
+### Example usage:
 
 ```python
-from task_manager import TaskManager
-
-manager = TaskManager()
-manager.add_task("Write report")
-manager.add_task("Attend meeting")
-manager.mark_done(0)
-
-for idx, task in enumerate(manager.list_tasks()):
-    print(f"{idx}: {task}")
-
-manager.remove_task(1)
+if __name__ == "__main__":
+    tm = TaskManager()
+    tm.add_task("Write report")
+    tm.add_task("Do laundry")
+    tm.list_tasks()
+    tm.mark_task_completed(0)
+    tm.list_tasks()
+    tm.remove_task(1)
+    tm.list_tasks()
 ```
 
-Let me know if you want me to add persistence, due dates, priorities, or other features!
+Let me know if you want me to include saving/loading tasks to a file or any other features!

@@ -1,63 +1,90 @@
 ```python
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
 class Task(BaseModel):
-    """A task with a description and completion status."""
+    """Task item with an id, description, and completion status."""
 
-    description: str = Field(..., min_length=1)
-    completed: bool = False
+    id: int
+    description: str = Field(min_length=1)
+    done: bool = False
 
 
 class TaskManager:
-    """Manage a list of tasks."""
+    """Manage a list of tasks with add, remove, list, and update operations."""
 
     def __init__(self) -> None:
         self._tasks: List[Task] = []
+        self._next_id: int = 1
 
-    def add_task(self, description: str) -> None:
+    def add_task(self, description: str) -> Task:
         """Add a new task with the given description.
 
         Args:
-            description: The task description, must be non-empty.
-        """
-        self._tasks.append(Task(description=description))
-
-    def complete_task(self, index: int) -> None:
-        """Mark the task at index as completed.
-
-        Args:
-            index: Index of the task to mark complete.
-
-        Raises:
-            IndexError: If the index is out of bounds.
-        """
-        task = self._tasks[index]
-        self._tasks[index] = task.copy(update={"completed": True})
-
-    def delete_task(self, index: int) -> None:
-        """Delete the task at index.
-
-        Args:
-            index: Index of the task to delete.
-
-        Raises:
-            IndexError: If the index is out of bounds.
-        """
-        del self._tasks[index]
-
-    def list_tasks(self, *, completed: bool | None = None) -> List[Task]:
-        """List tasks, optionally filtering by completion status.
-
-        Args:
-            completed: If True, only return completed tasks; if False,
-                only incomplete tasks; if None, return all tasks.
+            description: The task's description, must be non-empty.
 
         Returns:
-            List of tasks matching filter.
+            The created Task object.
         """
-        if completed is None:
+        task = Task(id=self._next_id, description=description)
+        self._tasks.append(task)
+        self._next_id += 1
+        return task
+
+    def get_task(self, task_id: int) -> Optional[Task]:
+        """Get a task by its id.
+
+        Args:
+            task_id: The id of the task.
+
+        Returns:
+            The Task if found, else None.
+        """
+        return next((task for task in self._tasks if task.id == task_id), None)
+
+    def remove_task(self, task_id: int) -> bool:
+        """Remove a task by its id.
+
+        Args:
+            task_id: The id of the task to remove.
+
+        Returns:
+            True if a task was removed, False if not found.
+        """
+        for i, task in enumerate(self._tasks):
+            if task.id == task_id:
+                del self._tasks[i]
+                return True
+        return False
+
+    def mark_done(self, task_id: int) -> bool:
+        """Mark the task as done.
+
+        Args:
+            task_id: The task id to mark done.
+
+        Returns:
+            True if task was found and marked, False otherwise.
+        """
+        task = self.get_task(task_id)
+        if task is None or task.done:
+            return False
+        # mutate the task in place (pydantic BaseModel is immutable by default,
+        # but default is mutable unless frozen=True)
+        task.done = True
+        return True
+
+    def list_tasks(self, done: Optional[bool] = None) -> List[Task]:
+        """List tasks, optionally filtered by completion status.
+
+        Args:
+            done: If set, filters tasks by their 'done' status.
+
+        Returns:
+            List of tasks, filtered if done is set.
+        """
+        if done is None:
             return list(self._tasks)
-        return [t for t in self._tasks if t.completed == completed]
+        return [task for task in self._tasks if task.done is done]
 ```

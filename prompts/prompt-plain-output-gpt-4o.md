@@ -1,84 +1,85 @@
-Creating a Python module to manage a list of tasks is a great exercise to practice object-oriented programming, file handling, and basic list operations. Below is a simple implementation of a task manager with features to add, remove, list, and save tasks to a file.
+Sure! I'll provide you with a simple Python module for managing a list of tasks. This module will provide basic functionality to add, remove, list, and mark tasks as complete. You can expand on this basic module to add more features or persist data using a database or file storage.
 
-We'll create a single class called `TaskManager` to handle these operations:
+Here's a basic implementation:
 
 ```python
-# task_manager.py
+# Define the data structure for a Task
+class Task:
+    def __init__(self, description):
+        self.description = description
+        self.completed = False
 
+    def mark_complete(self):
+        self.completed = True
+
+    def __str__(self):
+        status = "✓" if self.completed else "✗"
+        return f"[{status}] {self.description}"
+
+
+# Define the TaskManager class
 class TaskManager:
-    def __init__(self, file_name="tasks.txt"):
-        """Initialize the task manager with a list of tasks and specify a file for storage."""
+    def __init__(self):
         self.tasks = []
-        self.file_name = file_name
-        self.load_tasks()
 
-    def add_task(self, task):
-        """Add a task to the list."""
-        if task not in self.tasks:
-            self.tasks.append(task)
-            print(f"Task '{task}' added.")
-        else:
-            print(f"Task '{task}' is already in the list.")
+    def add_task(self, description):
+        task = Task(description)
+        self.tasks.append(task)
+        print(f"Task added: {description}")
 
-    def remove_task(self, task):
-        """Remove a task from the list."""
-        if task in self.tasks:
-            self.tasks.remove(task)
-            print(f"Task '{task}' removed.")
-        else:
-            print(f"Task '{task}' not found in the list.")
-    
+    def remove_task(self, index):
+        try:
+            removed_task = self.tasks.pop(index)
+            print(f"Task removed: {removed_task.description}")
+        except IndexError:
+            print("Error: Invalid task index")
+
     def list_tasks(self):
-        """List all tasks."""
-        if self.tasks:
-            print("Here are your tasks:")
-            for i, task in enumerate(self.tasks, 1):
-                print(f"{i}. {task}")
-        else:
-            print("No tasks to show.")
+        if not self.tasks:
+            print("No tasks found.")
+            return
 
-    def save_tasks(self):
-        """Save tasks to a file."""
+        print("Task List:")
+        for i, task in enumerate(self.tasks):
+            print(f"{i}: {task}")
+
+    def mark_task_complete(self, index):
         try:
-            with open(self.file_name, 'w') as file:
-                for task in self.tasks:
-                    file.write(f"{task}\n")
-            print(f"Tasks saved to {self.file_name}.")
-        except Exception as e:
-            print(f"An error occurred while saving tasks: {e}")
+            self.tasks[index].mark_complete()
+            print(f"Task marked complete: {self.tasks[index].description}")
+        except IndexError:
+            print("Error: Invalid task index")
 
-    def load_tasks(self):
-        """Load tasks from a file."""
-        try:
-            with open(self.file_name, 'r') as file:
-                self.tasks = [line.strip() for line in file.readlines()]
-            print(f"Tasks loaded from {self.file_name}.")
-        except FileNotFoundError:
-            print(f"No existing task file found. Starting with an empty task list.")
-        except Exception as e:
-            print(f"An error occurred while loading tasks: {e}")
 
-# Example of usage
+# Usage example
 if __name__ == "__main__":
     manager = TaskManager()
-    manager.add_task("Finish writing report")
-    manager.add_task("Email the client")
+
+    # Interacting with task manager
+    manager.add_task("Write unit tests")
+    manager.add_task("Create documentation")
     manager.list_tasks()
-    manager.save_tasks()
-    manager.remove_task("Email the client")
+
+    manager.mark_task_complete(0)
+    manager.list_tasks()
+
+    manager.remove_task(1)
     manager.list_tasks()
 ```
 
-### Key Features
-1. **Add Task**: Adds a unique task to the list.
-2. **Remove Task**: Removes a task if it exists in the list.
-3. **List Tasks**: Lists all current tasks in the task manager.
-4. **Save Tasks**: Saves tasks to a `tasks.txt` file.
-5. **Load Tasks**: Automatically loads tasks from a `tasks.txt` file when the `TaskManager` is initialized.
+### Features
 
-### How to Use
-- Save this code in a file named `task_manager.py`.
-- You can import and use the `TaskManager` class in other Python scripts.
-- Run the script directly to test its functionality; the example usage at the bottom demonstrates how to use the class methods.
+1. **Add Task:** Creates a new task with a description.
+2. **Remove Task:** Removes the task at the specified index.
+3. **List Tasks:** Lists all tasks, showing their status (complete or incomplete).
+4. **Mark Task Complete:** Marks the task at the specified index as complete.
 
-This implementation is simple and provides a good foundation for a task manager, which can be expanded with more features, such as setting priorities, due dates, or integrating with a database for persistent storage.
+### Usage
+
+- Initialize a `TaskManager` object.
+- Use `add_task(description)` to add a new task.
+- Use `remove_task(index)` to remove a task by its index.
+- Use `list_tasks()` to show current tasks.
+- Use `mark_task_complete(index)` to mark a task as complete.
+
+You can save this code to a `.py` file and use it as a module. To extend the functionality, consider adding features like saving tasks to a file, editing tasks, or prioritizing tasks.

@@ -1,160 +1,140 @@
-Below is an example Python module named task_manager.py that implements a simple task management system. This module defines a Task class to represent individual tasks and a TaskManager class to add, remove, list, and mark tasks as completed.
+Below is an example Python module named task_manager.py that implements a simple task management system. Each task is stored as a dictionary with an ID, description, and a status (pending or completed). You can add, remove, update, and list tasks using the TaskManager class.
 
-────────────────────────────
-# Begin task_manager.py
+---------------
+# task_manager.py
 
-class Task:
-    def __init__(self, task_id, description, completed=False):
-        """
-        Initialize a new task.
-
-        Args:
-            task_id (int): A unique identifier for the task.
-            description (str): A text description of the task.
-            completed (bool): Task completion status. Defaults to False.
-        """
-        self.task_id = task_id
-        self.description = description
-        self.completed = completed
-
-    def mark_completed(self):
-        """Mark the task as completed."""
-        self.completed = True
-
-    def __str__(self):
-        status = 'Done' if self.completed else 'Pending'
-        return f"[{self.task_id}] {self.description} - {status}"
-
+import itertools
 
 class TaskManager:
     def __init__(self):
-        """Initialize the Task Manager with an empty list of tasks."""
-        self.tasks = []
-        self.next_id = 1
-
+        """
+        Initializes a new TaskManager with an empty task list and an ID counter.
+        """
+        self._tasks = {}
+        self._id_counter = itertools.count(1)
+    
     def add_task(self, description):
         """
-        Add a new task.
-
-        Args:
-            description (str): Task description.
-
+        Adds a new task with the given description.
+        
+        Parameters:
+            description (str): A description of the task.
+            
         Returns:
-            Task: The newly created task.
+            int: The id of the newly added task.
         """
-        task = Task(self.next_id, description)
-        self.tasks.append(task)
-        self.next_id += 1
-        return task
-
-    def get_task(self, task_id):
-        """
-        Retrieve a task by its ID.
-
-        Args:
-            task_id (int): The ID of the task to retrieve.
-
-        Returns:
-            Task or None: The task with the specified id, or None if not found.
-        """
-        for task in self.tasks:
-            if task.task_id == task_id:
-                return task
-        return None
+        task_id = next(self._id_counter)
+        self._tasks[task_id] = {
+            'id': task_id,
+            'description': description,
+            'completed': False
+        }
+        return task_id
 
     def remove_task(self, task_id):
         """
-        Remove a task by its ID.
-
-        Args:
-            task_id (int): The ID of the task to remove.
-
-        Returns:
-            bool: True if a task was removed, False if not found.
+        Removes the task with the specified id.
+        
+        Parameters:
+            task_id (int): The id of the task to remove.
+            
+        Raises:
+            KeyError: If the task id does not exist.
         """
-        task = self.get_task(task_id)
-        if task:
-            self.tasks.remove(task)
-            return True
-        return False
-
-    def mark_task_completed(self, task_id):
-        """
-        Mark a specific task as completed.
-
-        Args:
-            task_id (int): The ID of the task to mark completed.
-
-        Returns:
-            bool: True if the task was found and marked, False otherwise.
-        """
-        task = self.get_task(task_id)
-        if task:
-            task.mark_completed()
-            return True
-        return False
-
-    def list_tasks(self, completed=None):
-        """
-        List tasks with an optional filter on completion status.
-
-        Args:
-            completed (bool, optional): If provided, filter tasks by completed status.
-
-        Returns:
-            list: A list of tasks that match the criteria.
-        """
-        if completed is None:
-            return self.tasks
+        if task_id in self._tasks:
+            del self._tasks[task_id]
         else:
-            return [task for task in self.tasks if task.completed == completed]
+            raise KeyError(f"Task with id {task_id} not found.")
+    
+    def mark_completed(self, task_id):
+        """
+        Marks the task with the specified id as completed.
+        
+        Parameters:
+            task_id (int): The id of the task to mark as completed.
+        
+        Raises:
+            KeyError: If the task id does not exist.
+        """
+        if task_id in self._tasks:
+            self._tasks[task_id]['completed'] = True
+        else:
+            raise KeyError(f"Task with id {task_id} not found.")
+    
+    def list_tasks(self, show_all=True):
+        """
+        Lists tasks.
+        
+        Parameters:
+            show_all (bool): If True, all tasks are returned. If False, only pending tasks are returned.
+        
+        Returns:
+            list: A list of tasks (each task is a dictionary).
+        """
+        if show_all:
+            return list(self._tasks.values())
+        else:
+            return [task for task in self._tasks.values() if not task['completed']]
+    
+    def get_task(self, task_id):
+        """
+        Gets the task with the specified id.
+        
+        Parameters:
+            task_id (int): The id of the task to retrieve.
+        
+        Returns:
+            dict: The task dictionary.
+        
+        Raises:
+            KeyError: If the task id does not exist.
+        """
+        if task_id in self._tasks:
+            return self._tasks[task_id]
+        else:
+            raise KeyError(f"Task with id {task_id} not found.")
 
-    def __str__(self):
-        if not self.tasks:
-            return "No tasks available."
-        result = "\n".join(str(task) for task in self.tasks)
-        return result
-
-
-# If this module is run as the main program, demonstrate its functionality.
-if __name__ == "__main__":
-    tm = TaskManager()
+# Example usage (for testing the module functionality)
+if __name__ == '__main__':
+    manager = TaskManager()
 
     # Adding tasks
-    tm.add_task("Buy groceries")
-    tm.add_task("Call Alice")
-    tm.add_task("Prepare presentation")
-
+    task1_id = manager.add_task("Buy groceries")
+    task2_id = manager.add_task("Read a book")
+    
     print("All Tasks:")
-    print(tm)
-    print()
-
-    # Mark the second task as completed
-    tm.mark_task_completed(2)
-
-    print("Tasks after marking task 2 as completed:")
-    print(tm)
-    print()
-
-    # List only pending tasks
-    pending_tasks = tm.list_tasks(completed=False)
-    print("Pending Tasks:")
-    for task in pending_tasks:
+    for task in manager.list_tasks():
         print(task)
+    
+    # Mark task1 as completed
+    manager.mark_completed(task1_id)
+    
+    print("\nPending Tasks:")
+    for task in manager.list_tasks(show_all=False):
+        print(task)
+    
+    # Remove task2 and show remaining tasks
+    manager.remove_task(task2_id)
+    
+    print("\nAll Tasks after removal:")
+    for task in manager.list_tasks():
+        print(task)
+    
+    # Retrieve individual task
+    try:
+        task = manager.get_task(task1_id)
+        print("\nRetrieved Task:", task)
+    except KeyError as e:
+        print(e)
 
-    # Remove a task
-    tm.remove_task(1)
-    print("\nTasks after removing task 1:")
-    print(tm)
-
-# End task_manager.py
-────────────────────────────
+---------------
 
 Explanation:
 
-1. The Task class represents a single task with an ID, a description, and a flag indicating whether it’s completed.
-2. The TaskManager class maintains a list of Task objects. It includes methods to add a new task (automatically assigning an incrementing ID), get a task, remove a task, mark a task as completed, and list tasks (with an optional filter based on completion status).
-3. At the bottom of the module, a basic demonstration is provided which runs if the module is executed as the main program.
-4. You can import this module into other Python scripts to manage tasks programmatically.
+• The TaskManager class initializes with an empty dictionary to store tasks and an ID generator using itertools.count.
+• The add_task method creates a new task with a unique id and marks it initially as not completed.
+• The remove_task, mark_completed, and get_task methods provide ways to modify and access the tasks.
+• The list_tasks method returns either all tasks or only the pending ones, based on the show_all parameter.
+• The bottom section under if __name__ == '__main__' demonstrates basic usage and testing of the module functionality.
 
-This module can be extended further based on your needs, such as saving tasks to a file or integrating with a GUI.
+You can now import task_manager.py into your projects and use the TaskManager class to manage a list of tasks.

@@ -1,165 +1,192 @@
-Below is a complete Python module that uses pydantic models to represent each task and a TaskManager class to perform task operations. The module includes type hints, Google‑style docstrings, and is formatted to pass flake8/black and mypy.
+Below is a complete Python module that manages a list of tasks. Each task is represented using a Pydantic model for validation, and the TaskManager class provides methods for common operations such as adding, removing, listing, and marking tasks as complete or incomplete.
 
---------------------------------------------------
+------------------------------------------------------------
+# tasks_manager.py
+
+------------------------------------------------------------
 #!/usr/bin/env python3
 """
-Task Manager Module
+A module to manage a list of tasks.
 
-This module defines a Task model and a TaskManager class to manage a list of tasks.
-It provides basic operations such as creating, updating, retrieving, and deleting tasks.
+Each task is defined using a Pydantic model for data validation.
+The TaskManager class provides a simple interface to add, remove,
+query, and update tasks.
+
+Usage:
+    manager = TaskManager()
+    task = manager.add_task("Buy groceries", "Milk, Eggs, Bread")
+    manager.mark_completed(task.id)
+    all_tasks = manager.list_tasks()
 """
 
+import uuid
 from typing import List, Optional
-from uuid import uuid4
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 
 
 class Task(BaseModel):
-    """Data model representing a single task.
-
-    Attributes:
-        id (str): A unique identifier for the task.
-        description (str): The description of the task.
-        completed (bool): A flag indicating if the task has been completed.
-    """
-    id: str = Field(default_factory=lambda: str(uuid4()))
-    description: str
+    """Represents a task with a unique id, title, description, and completion status."""
+    id: str
+    title: str = Field(..., min_length=1)
+    description: Optional[str] = None
     completed: bool = False
 
-    @validator("description")
-    def description_must_not_be_empty(cls, value: str) -> str:
-        """Validate that the task description is not empty.
+    @classmethod
+    def create(cls, title: str, description: Optional[str] = None) -> "Task":
+        """Factory method to create a new task with a unique identifier.
 
         Args:
-            value (str): The description value.
+            title (str): The title of the task.
+            description (Optional[str], optional): A description of the task.
+                Defaults to None.
 
         Returns:
-            str: The original description if valid.
-
-        Raises:
-            ValueError: If the description is empty.
+            Task: A new Task instance.
         """
-        if not value.strip():
-            raise ValueError("Task description must not be empty")
-        return value
+        return cls(
+            id=str(uuid.uuid4()),
+            title=title,
+            description=description,
+            completed=False,
+        )
 
 
 class TaskManager:
-    """Class to manage a list of tasks.
-
-    Attributes:
-        _tasks (List[Task]): Internal list of tasks.
-    """
+    """Manages a list of tasks with operations to add, list, update, and remove tasks."""
 
     def __init__(self) -> None:
-        """Initializes a TaskManager with an empty task list."""
-        self._tasks: List[Task] = []
+        """Initialize the TaskManager with an empty list of tasks."""
+        self.tasks: List[Task] = []
 
-    def add_task(self, description: str) -> Task:
-        """Create and add a new task to the manager.
+    def add_task(self, title: str, description: Optional[str] = None) -> Task:
+        """Add a new task to the list.
 
         Args:
-            description (str): The description for the new task.
+            title (str): The title of the task.
+            description (Optional[str], optional): The description of the task.
+                Defaults to None.
 
         Returns:
             Task: The newly created task.
         """
-        task = Task(description=description)
-        self._tasks.append(task)
+        task = Task.create(title, description)
+        self.tasks.append(task)
         return task
 
     def get_task(self, task_id: str) -> Optional[Task]:
-        """Retrieve a task by its unique identifier.
+        """Retrieve a task by its unique id.
 
         Args:
-            task_id (str): The unique identifier of the task.
+            task_id (str): The ID of the task.
 
         Returns:
             Optional[Task]: The task if found; otherwise, None.
         """
-        for task in self._tasks:
+        for task in self.tasks:
             if task.id == task_id:
                 return task
         return None
 
-    def update_task(self, task_id: str, *, description: Optional[str] = None,
-                    completed: Optional[bool] = None) -> Optional[Task]:
-        """Update properties of an existing task.
+    def remove_task(self, task_id: str) -> bool:
+        """Remove a task based on its id.
 
         Args:
-            task_id (str): The unique identifier of the task.
-            description (Optional[str]): New description for the task.
-            completed (Optional[bool]): New completion status for the task.
+            task_id (str): The ID of the task to remove.
 
         Returns:
-            Optional[Task]: The updated task if found; otherwise, None.
+            bool: True if the task was removed; False if not found.
         """
-        task = self.get_task(task_id)
-        if task is None:
-            return None
-
-        # Create a dictionary of fields to update.
-        update_data = {}
-        if description is not None:
-            update_data["description"] = description
-        if completed is not None:
-            update_data["completed"] = completed
-
-        if update_data:
-            # Using pydantic's copy(update=...) to create an updated Task instance.
-            updated_task = task.copy(update=update_data)
-            # Replace the task in the internal list.
-            index = self._tasks.index(task)
-            self._tasks[index] = updated_task
-            return updated_task
-
-        return task
-
-    def delete_task(self, task_id: str) -> bool:
-        """Delete a task by its unique identifier.
-
-        Args:
-            task_id (str): The unique identifier of the task.
-
-        Returns:
-            bool: True if the task was found and deleted, False otherwise.
-        """
-        for index, task in enumerate(self._tasks):
+        for index, task in enumerate(self.tasks):
             if task.id == task_id:
-                del self._tasks[index]
+                del self.tasks[index]
                 return True
         return False
 
-    def list_tasks(self) -> List[Task]:
-        """List all stored tasks.
+    def list_tasks(self, completed: Optional[bool] = None) -> List[Task]:
+        """List all tasks filtered by completion status if provided.
+
+        Args:
+            completed (Optional[bool], optional): If provided, filters tasks that are
+                either completed (True) or incomplete (False). Defaults to None.
 
         Returns:
-            List[Task]: The list of all tasks.
+            List[Task]: A list of tasks that match the filter criteria.
         """
-        return self._tasks.copy()
+        if completed is None:
+            return self.tasks.copy()
+        return [task for task in self.tasks if task.completed == completed]
+
+    def mark_completed(self, task_id: str) -> bool:
+        """Mark a specific task as completed.
+
+        Args:
+            task_id (str): The ID of the task to mark as completed.
+
+        Returns:
+            bool: True if the task was found and marked; False otherwise.
+        """
+        task = self.get_task(task_id)
+        if task:
+            task.completed = True
+            return True
+        return False
+
+    def mark_incomplete(self, task_id: str) -> bool:
+        """Mark a specific task as incomplete.
+
+        Args:
+            task_id (str): The ID of the task to mark as incomplete.
+
+        Returns:
+            bool: True if the task was found and marked; False otherwise.
+        """
+        task = self.get_task(task_id)
+        if task:
+            task.completed = False
+            return True
+        return False
+
+    def clear_completed(self) -> int:
+        """Remove all tasks that are marked as completed.
+
+        Returns:
+            int: The number of tasks that were removed.
+        """
+        completed_tasks = [task for task in self.tasks if task.completed]
+        self.tasks = [task for task in self.tasks if not task.completed]
+        return len(completed_tasks)
 
 
-if __name__ == '__main__':
-    # A simple demonstration of TaskManager usage.
+# Example usage when running this module directly.
+if __name__ == "__main__":
     manager = TaskManager()
     print("Adding tasks...")
-    task1 = manager.add_task("Write unit tests")
-    task2 = manager.add_task("Refactor code")
-    print("Current tasks:", manager.list_tasks())
+    task1 = manager.add_task("Write documentation", "Document the task manager module")
+    task2 = manager.add_task("Fix bugs", "Resolve issue #42")
+    print("Listing all tasks:", manager.list_tasks())
 
-    print("\nUpdating a task...")
-    updated_task = manager.update_task(task1.id, completed=True)
-    print("Updated task:", updated_task)
+    print("Marking the first task as completed...")
+    manager.mark_completed(task1.id)
+    print("Completed tasks:", manager.list_tasks(completed=True))
+    print("Incomplete tasks:", manager.list_tasks(completed=False))
 
-    print("\nDeleting a task...")
-    if manager.delete_task(task2.id):
-        print("Task deleted successfully.")
-    else:
-        print("Task not found.")
-    print("Final tasks:", manager.list_tasks())
---------------------------------------------------
+    print("Clearing completed tasks...")
+    cleared_count = manager.clear_completed()
+    print(f"Cleared {cleared_count} task(s).")
+    print("Remaining tasks:", manager.list_tasks())
+    
+    print("Removing remaining tasks...")
+    manager.remove_task(task2.id)
+    print("Remaining tasks after removal:", manager.list_tasks())
+    
+    print("Done.")
+------------------------------------------------------------
 
-This module is designed with clarity and modularity in mind. Each function reveals its intent with descriptive names and comprehensive docstrings, and the code is fully type annotated to ensure reliability and maintainability.
+This module adheres to the provided guidelines:
+• It uses clear, descriptive naming and docstrings.
+• It covers basic task management operations.
+• It utilizes Pydantic for task validation.
+• It includes type hints and is formatted for readability.
 
-You can further test this module with unit tests or by running it directly as a standalone script.
+You can further extend this module with additional features or integrate it into a larger project as needed.

@@ -1,21 +1,22 @@
-| Prompt Style | Code Structure Complexity | Validation Approach       | Testing Approach          | Type Annotations       | Docstrings          | Tooling & Linting Mentions              | Overall Strength               |
-|-------------|---------------------------|---------------------------|---------------------------|------------------------|----------------------|------------------------------------------|---------------------------------|
-| Fancy       | More layered (class-based with Pydantic) | Pydantic-based input validation | Includes in-code unit test function | Comprehensive type hints (Mypy compliant) | Google-style docstrings | Mentions Black, Flake8, Mypy explicitly | Highly robust and professional  |
-| Plain       | Simpler functional structure (single class) | Basic checks only (no Pydantic) | Demonstrates usage example but no explicit test suite | Minimal or absent | Few/no docstrings | No direct mention, simpler environment setup | Easier onboarding, less tooling overhead |
+| Prompt Style | Approach to Tasks                               | Complexity Level | Testing Approach                 | Additional Tools/Practices Mentioned                     |
+|-------------:|:------------------------------------------------|:----------------|:---------------------------------|:---------------------------------------------------------|
+| **Fancy**    | Provides classes with type hints, includes tests, uses mypy/flake8/black for linting/formatting | High            | Comprehensive tests (pytest)     | Uses mypy, pytest, flake8, black, strict type coverage, docstrings |
+| **Medium**   | Uses simple class-based structure, includes straightforward unit tests | Medium          | Basic unittest-based tests       | Mentions incremental ID, docstrings, and built-in unittest|
+| **Plain**    | Uses a single class managing tasks with direct I/O feedback | Low             | Demonstration only (no formal test file) | No mention of linting, type checking, or test frameworks        |
 
 ---
 
-Qualitative Analysis
+### Qualitative Analysis
 
-1. Which prompt style gives the best results overall?
-   • The "fancy" prompt style generally provides a more robust, professional-grade solution. It includes stricter validation (using Pydantic), comprehensive type hints, explicit testing, and integration with common Python development tools (Black, Flake8, Mypy). This leads to more maintainable, error-resistant code.  
-   • The "plain" prompt style is simpler: it avoids additional dependencies and is easier for a quick start, but lacks the thoroughness and formal structure of the fancy version.
+1) Which prompt style gives the best results overall?
+• The “Fancy” prompt style delivers the most robust and professional solution, providing comprehensive tooling (mypy, pytest, flake8, black), clear type hints, and a testing strategy that aligns with modern Python best practices. If you need a production-ready approach with strong engineering conventions, “Fancy” appears to be the best.
 
-2. What aspects of the model's response differ between the different prompt styles?
-   • The fancy response devotes considerable attention to guiding principles (e.g., small safe increments, naming conventions), uses Pydantic for validation, includes docstrings, and integrates code linters and formatters. It also includes a basic test function.  
-   • The plain response focuses on core functionality (add/remove/complete tasks) without additional tooling or typed data models. It provides a single class with simple dictionary-based tasks and minimal checks.
+2) What aspects of the model's response differ between the different prompt styles?
+• The “Fancy” version emphasizes engineering practices such as type annotations, linting, formatting, and testing frameworks. This demonstrates a more formal approach suitable for scalable codebases.  
+• The “Medium” prompt style also uses a class approach and outlines basic tests, but it is a bit simpler: it lacks the in-depth mention of type checking tools, though it still uses docstrings and a functional flow.  
+• The “Plain” style is the most straightforward, focusing on immediate, user-facing functionality. It emphasizes direct usage, adding and removing tasks, and prints out results, but includes minimal or no mention of dedicated testing frameworks or code-quality tools.
 
-3. What aspects of the model's response are consistent across all prompt styles?
-   • Both responses implement the requested task management functionality with methods to add, remove, and list tasks.  
-   • They each showcase examples of how to create and manipulate the tasks within a Python script or module context.  
-   • Both solutions ultimately achieve a working system for task management, ensuring the user can add tasks and, in some form, verify or remove them.
+3) What aspects of the model's response are consistent across all prompt styles?
+• All three solutions provide a Python class or structure to manage tasks.
+• They each offer methods to add tasks, remove tasks, and display tasks (in some form).  
+• They all focus on usability and clarity, aligning with the basic requirement of “make a Python module that can manage a list of tasks.”
